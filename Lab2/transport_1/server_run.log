@@ -1,0 +1,43 @@
+[DEBUG] Socket created successfully
+[DEBUG] Bind and listen succeeded
+
+=== Server started, listening on port 9999 ===
+
+[RECV] from 127.0.0.1:56347 (1024 bytes)
+[PKT] flags=0x01 seq=0 ack=0 wnd=4
+[RECV] SYN (seq=0)
+[SEND] to 127.0.0.1:56347 (1024 bytes)
+[SEND] SYN+ACK (seq=0, ack=1)
+[RECV] from 127.0.0.1:56347 (1024 bytes)
+[PKT] flags=0x02 seq=1 ack=1 wnd=4
+[RECV] ACK (seq=1, ack=1)
+
+=== Connection established ===
+
+[RECV] from 127.0.0.1:56347 (1024 bytes)
+[PKT] flags=0x0a seq=1 ack=1 wnd=4
+[RECV] data (seq=1)
+[SEND] to 127.0.0.1:56347 (1024 bytes)
+
+[APP] Received data: Hello from Client
+[SEND] to 127.0.0.1:56347 (1024 bytes)
+[SEND] data (seq=1, len=17)
+[APP] Sent 17 bytes
+
+[APP] Waiting for close...
+
+Waiting for close from client (checking for FIN)...
+[RECV] from 127.0.0.1:56347 (1024 bytes)
+[PKT] flags=0x02 seq=2 ack=1 wnd=4
+[RECV] ACK (ack=1)
+[RECV] from 127.0.0.1:56347 (1024 bytes)
+[PKT] flags=0x06 seq=2 ack=1 wnd=4
+[SEND] to 127.0.0.1:56347 (1024 bytes)
+[RECV] FIN (seq=2) - responded FIN+ACK
+[RECV] from 127.0.0.1:56347 (1024 bytes)
+[PKT] flags=0x02 seq=3 ack=3 wnd=4
+[RECV] ACK (ack=3)
+[CONG] cwnd=3
+[APP] Server closed
+
+Press Enter to exit...
