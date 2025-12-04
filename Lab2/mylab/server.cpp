@@ -49,6 +49,7 @@ bool acceptConnection(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t& cl
         synAckPacket.header.ack = clientSeq + 1;
         synAckPacket.header.flag = FLAG_SYN | FLAG_ACK;
         synAckPacket.dataLen = 0;
+        synAckPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
         synAckPacket.header.calculateChecksum(synAckPacket.data, 0);
         
         char sendBuffer[MAX_PACKET_SIZE];
@@ -114,6 +115,7 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
     ackPacket.header.ack = clientSeq + 1;
     ackPacket.header.flag = FLAG_ACK;
     ackPacket.dataLen = 0;
+    ackPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
     ackPacket.header.calculateChecksum(ackPacket.data, 0);
     
     char sendBuffer[MAX_PACKET_SIZE];
@@ -140,6 +142,7 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
     finPacket.header.ack = clientSeq + 1;
     finPacket.header.flag = FLAG_FIN;
     finPacket.dataLen = 0;
+    finPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
     finPacket.header.calculateChecksum(finPacket.data, 0);
     
     finPacket.serialize(sendBuffer);

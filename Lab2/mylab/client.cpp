@@ -28,6 +28,7 @@ bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq
     synPacket.header.ack = 0;
     synPacket.header.flag = FLAG_SYN;
     synPacket.dataLen = 0;
+    synPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
     synPacket.header.calculateChecksum(synPacket.data, 0);
     
     while (retries < MAX_RETRIES) {
@@ -87,6 +88,7 @@ bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq
                 ackPacket.header.ack = serverSeq + 1;
                 ackPacket.header.flag = FLAG_ACK;
                 ackPacket.dataLen = 0;
+                ackPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
                 ackPacket.header.calculateChecksum(ackPacket.data, 0);
                 
                 ackPacket.serialize(sendBuffer);
@@ -128,6 +130,7 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
     finPacket.header.ack = serverSeq;
     finPacket.header.flag = FLAG_FIN;
     finPacket.dataLen = 0;
+    finPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
     finPacket.header.calculateChecksum(finPacket.data, 0);
     
     char sendBuffer[MAX_PACKET_SIZE];
@@ -197,6 +200,7 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
         finalAckPacket.header.ack = recvPacket.header.seq + 1;
         finalAckPacket.header.flag = FLAG_ACK;
         finalAckPacket.dataLen = 0;
+        finalAckPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
         finalAckPacket.header.calculateChecksum(finalAckPacket.data, 0);
         
         finalAckPacket.serialize(sendBuffer);
