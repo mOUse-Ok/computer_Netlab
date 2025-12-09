@@ -24,7 +24,7 @@ enum ConnectionState {
 #define FLAG_SYN  0x01  // 同步标志（0000 0001）：用于建立连接
 #define FLAG_ACK  0x02  // 确认标志（0000 0010）：用于确认收到数据
 #define FLAG_FIN  0x04  // 结束标志（0000 0100）：用于关闭连接
-#define FLAG_SACK 0x08  // 选择确认标志（0000 1000）：用于后续选择确认功能
+#define FLAG_SACK 0x08  // 选择确认标志（0000 1000）：用于选择确认功能
 
 // ===== 协议常量 =====
 // 协议头大小：seq(4) + ack(4) + flag(1) + win(2) + checksum(2) + len(2) + 保留(5) = 20字节
@@ -38,6 +38,225 @@ enum ConnectionState {
 #define HEARTBEAT_INTERVAL_MS 1000  // 心跳间隔：1秒
 #define CONNECTION_TIMEOUT_MS 5000  // 连接超时：5秒无响应则认为断开
 
+// ===== 流水线传输与选择确认（SACK）相关常量 =====
+// 描述：用于流水线传输、固定窗口流量控制和选择确认功能
+#define FIXED_WINDOW_SIZE 4       // 固定窗口大小（作业要求：发送窗口 = 接收窗口）
+#define MSS 1024                  // 最大报文段大小（Maximum Segment Size）
+#define SACK_TIMEOUT_MS 500       // SACK超时重传时间：500毫秒（便于测试）
+#define MAX_SACK_BLOCKS 4         // SACK最大块数量（用于携带非连续已接收序列号）
+
+// ===== 发送端窗口状态结构体 =====
+// 描述：管理发送端滑动窗口，跟踪已发送和已确认的数据包
+// 用于流水线发送和选择确认功能
+struct SendWindow {
+    uint32_t base;                              // 窗口左边界（已确认的最大序列号+1，即第一个未确认的包）
+    uint32_t next_seq;                          // 下一个要发送的序列号
+    uint8_t is_sent[FIXED_WINDOW_SIZE];         // 标记窗口内包是否已发送（0=未发送，1=已发送）
+    uint8_t is_ack[FIXED_WINDOW_SIZE];          // 标记窗口内包是否已确认（0=未确认，1=已确认）
+    char data_buf[FIXED_WINDOW_SIZE][MSS];      // 窗口内包的数据缓存（用于重传）
+    int data_len[FIXED_WINDOW_SIZE];            // 窗口内包的实际数据长度
+    clock_t send_time[FIXED_WINDOW_SIZE];       // 每个包的发送时间（用于超时判断）
+    
+    // ===== 默认构造函数 =====
+    // 描述：初始化发送窗口所有字段为默认值
+    SendWindow() : base(0), next_seq(0) {
+        // 初始化所有数组为0
+        memset(is_sent, 0, sizeof(is_sent));
+        memset(is_ack, 0, sizeof(is_ack));
+        memset(data_buf, 0, sizeof(data_buf));
+        memset(data_len, 0, sizeof(data_len));
+        memset(send_time, 0, sizeof(send_time));
+    }
+    
+    // ===== 重置窗口 =====
+    // 描述：重置发送窗口到初始状态
+    // 参数：initial_seq - 初始序列号
+    void reset(uint32_t initial_seq) {
+        base = initial_seq;
+        next_seq = initial_seq;
+        memset(is_sent, 0, sizeof(is_sent));
+        memset(is_ack, 0, sizeof(is_ack));
+        memset(data_buf, 0, sizeof(data_buf));
+        memset(data_len, 0, sizeof(data_len));
+        memset(send_time, 0, sizeof(send_time));
+    }
+    
+    // ===== 检查窗口是否可发送新包 =====
+    // 描述：判断当前是否可以发送新的数据包
+    // 返回值：true表示可以发送，false表示窗口已满
+    bool canSend() const {
+        return (next_seq < base + FIXED_WINDOW_SIZE);
+    }
+    
+    // ===== 获取窗口内的索引 =====
+    // 描述：根据序列号获取在窗口数组中的索引位置
+    // 使用绝对索引（seq % FIXED_WINDOW_SIZE），避免窗口滑动后索引错乱
+    // 参数：seq - 序列号
+    // 返回值：窗口内的索引（0 到 FIXED_WINDOW_SIZE-1）
+    int getIndex(uint32_t seq) const {
+        return seq % FIXED_WINDOW_SIZE;
+    }
+    
+    // ===== 滑动窗口 =====
+    // 描述：当收到连续的ACK时，滑动窗口到新的位置
+    // 说明：找到连续已确认的最大序列号，然后滑动base到该位置
+    void slideWindow() {
+        // 从base开始，找到连续已确认的包
+        while (is_ack[getIndex(base)] && base < next_seq) {
+            // 清除当前位置的状态
+            int idx = getIndex(base);
+            is_sent[idx] = 0;
+            is_ack[idx] = 0;
+            data_len[idx] = 0;
+            base++;  // 窗口向前滑动
+        }
+    }
+};
+
+// ===== 接收端窗口状态结构体 =====
+// 描述：管理接收端滑动窗口，跟踪已接收的数据包
+// 用于选择确认功能和数据重组
+struct RecvWindow {
+    uint32_t base;                              // 窗口左边界（期望接收的下一个序列号）
+    char data_buf[FIXED_WINDOW_SIZE][MSS];      // 窗口内已接收的包（按序列号排序存储）
+    int data_len[FIXED_WINDOW_SIZE];            // 窗口内已接收包的实际数据长度
+    uint8_t is_received[FIXED_WINDOW_SIZE];     // 标记窗口内包是否已接收（0=未接收，1=已接收）
+    
+    // ===== 默认构造函数 =====
+    // 描述：初始化接收窗口所有字段为默认值
+    RecvWindow() : base(0) {
+        memset(data_buf, 0, sizeof(data_buf));
+        memset(data_len, 0, sizeof(data_len));
+        memset(is_received, 0, sizeof(is_received));
+    }
+    
+    // ===== 重置窗口 =====
+    // 描述：重置接收窗口到初始状态
+    // 参数：initial_seq - 初始期望序列号
+    void reset(uint32_t initial_seq) {
+        base = initial_seq;
+        memset(data_buf, 0, sizeof(data_buf));
+        memset(data_len, 0, sizeof(data_len));
+        memset(is_received, 0, sizeof(is_received));
+    }
+    
+    // ===== 检查序列号是否在窗口范围内 =====
+    // 描述：判断接收到的包序列号是否在当前接收窗口范围内
+    // 参数：seq - 接收到的包的序列号
+    // 返回值：true表示在窗口内，false表示不在
+    bool inWindow(uint32_t seq) const {
+        return (seq >= base && seq < base + FIXED_WINDOW_SIZE);
+    }
+    
+    // ===== 获取窗口内的索引 =====
+    // 描述：根据序列号获取在窗口数组中的索引位置
+    // 使用绝对索引（seq % FIXED_WINDOW_SIZE），避免窗口滑动后索引错乱
+    // 参数：seq - 序列号
+    // 返回值：窗口内的索引（0 到 FIXED_WINDOW_SIZE-1）
+    int getIndex(uint32_t seq) const {
+        return seq % FIXED_WINDOW_SIZE;
+    }
+    
+    // ===== 滑动窗口并取出连续数据 =====
+    // 描述：从窗口开始位置取出连续已接收的数据，并滑动窗口
+    // 参数：
+    //   out_buf - 输出缓冲区，用于存储取出的数据
+    //   max_len - 输出缓冲区最大长度
+    // 返回值：取出的数据总长度
+    int slideAndGetData(char* out_buf, int max_len) {
+        int total_len = 0;
+        // 从base开始，取出连续已接收的数据
+        while (is_received[getIndex(base)]) {
+            int idx = getIndex(base);
+            // 检查输出缓冲区是否有足够空间
+            if (total_len + data_len[idx] <= max_len) {
+                memcpy(out_buf + total_len, data_buf[idx], data_len[idx]);
+                total_len += data_len[idx];
+            }
+            // 清除当前位置的状态
+            is_received[idx] = 0;
+            data_len[idx] = 0;
+            base++;  // 窗口向前滑动
+        }
+        return total_len;
+    }
+    
+    // ===== 生成SACK信息 =====
+    // 描述：生成选择确认信息，返回窗口内已接收的非连续序列号列表
+    // 参数：
+    //   sack_list - 输出数组，存储已接收的序列号
+    //   max_count - 最大返回数量
+    // 返回值：实际返回的序列号数量
+    int generateSACK(uint32_t* sack_list, int max_count) const {
+        int count = 0;
+        // 遍历窗口，收集所有已接收的包序列号
+        for (uint32_t seq = base; seq < base + FIXED_WINDOW_SIZE && count < max_count; seq++) {
+            if (is_received[getIndex(seq)]) {
+                sack_list[count++] = seq;
+            }
+        }
+        return count;
+    }
+};
+
+// ===== SACK数据结构 =====
+// 描述：用于在ACK包中携带选择确认信息
+// 包含已接收的非连续序列号列表
+struct SACKInfo {
+    uint32_t sack_blocks[MAX_SACK_BLOCKS];  // 已接收的序列号列表
+    int count;                               // 有效序列号数量
+    
+    // ===== 默认构造函数 =====
+    SACKInfo() : count(0) {
+        memset(sack_blocks, 0, sizeof(sack_blocks));
+    }
+    
+    // ===== 序列化SACK信息到缓冲区 =====
+    // 描述：将SACK信息序列化为字节流，用于网络传输
+    // 参数：buffer - 目标缓冲区
+    // 返回值：序列化后的字节数
+    int serialize(char* buffer) const {
+        // 格式：[count(1字节)] [seq1(4字节)] [seq2(4字节)] ...
+        buffer[0] = (char)count;
+        int offset = 1;
+        for (int i = 0; i < count; i++) {
+            memcpy(buffer + offset, &sack_blocks[i], sizeof(uint32_t));
+            offset += sizeof(uint32_t);
+        }
+        return offset;
+    }
+    
+    // ===== 从缓冲区反序列化SACK信息 =====
+    // 描述：从接收到的字节流中解析SACK信息
+    // 参数：
+    //   buffer - 源缓冲区
+    //   bufLen - 缓冲区长度
+    // 返回值：true表示解析成功，false表示失败
+    bool deserialize(const char* buffer, int bufLen) {
+        if (bufLen < 1) return false;
+        count = (uint8_t)buffer[0];
+        if (count > MAX_SACK_BLOCKS) count = MAX_SACK_BLOCKS;
+        if (bufLen < 1 + count * (int)sizeof(uint32_t)) return false;
+        int offset = 1;
+        for (int i = 0; i < count; i++) {
+            memcpy(&sack_blocks[i], buffer + offset, sizeof(uint32_t));
+            offset += sizeof(uint32_t);
+        }
+        return true;
+    }
+    
+    // ===== 检查序列号是否在SACK列表中 =====
+    // 描述：判断某个序列号是否已被选择确认
+    // 参数：seq - 要检查的序列号
+    // 返回值：true表示在列表中，false表示不在
+    bool contains(uint32_t seq) const {
+        for (int i = 0; i < count; i++) {
+            if (sack_blocks[i] == seq) return true;
+        }
+        return false;
+    }
+};
+
 // ===== RFC 1071 校验和计算函数 =====
 // 描述：采用 RFC 1071 标准计算校验和，适用于网络数据校验
 // 参数：
@@ -46,7 +265,7 @@ enum ConnectionState {
 // 返回值：16位校验和（1的补码）
 // 算法说明：
 //   1. 将数据按16位（2字节）分组进行累加
-//   2. 如果数据长度为奇数，最后一个字节单独处理
+//   2. 如果数据长度为1字节，最后一个字节单独处理
 //   3. 累加过程中，如果有进位（超过16位），将进位加回低16位
 //   4. 最后对结果取反（1的补码）
 inline uint16_t calculate_checksum(const void* data, int len) {

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdio>
 #include <winsock2.h>  // Windows Socket API头文件
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
 #include "protocol.h"  // 引入自定义协议头文件
@@ -8,6 +9,170 @@
 #define SERVER_PORT 8888  // 服务端端口
 #define SERVER_IP "127.0.0.1"  // 服务端IP地址，这里使用本地回环地址
 #define BUFFER_SIZE 1024  // 缓冲区大小
+
+// ===== 全局发送窗口 =====
+// 描述：用于管理流水线发送的滑动窗口状态
+SendWindow g_sendWindow;
+
+// ===== 流水线发送数据函数（支持SACK） =====
+// 描述：使用流水线方式发送大量数据，支持选择确认和固定窗口流量控制
+// 参数：
+//   clientSocket - 客户端套接字
+//   serverAddr   - 服务端地址
+//   data         - 要发送的数据
+//   dataLen      - 数据长度
+//   baseSeq      - 起始序列号
+// 返回值：true表示发送成功，false表示发送失败
+bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr, 
+                  const char* data, int dataLen, uint32_t baseSeq) {
+    // 初始化发送窗口
+    g_sendWindow.reset(baseSeq);
+    
+    int totalPackets = (dataLen + MAX_DATA_SIZE - 1) / MAX_DATA_SIZE;  // 计算总包数
+    int sentPackets = 0;    // 已完成发送（已确认）的包数
+    int dataOffset = 0;     // 数据偏移量
+    
+    std::cout << "\n[Pipeline Send] Starting to send data, total length=" << dataLen 
+              << ", total packets=" << totalPackets 
+              << ", window size=" << FIXED_WINDOW_SIZE << std::endl;
+    
+    // 设置非阻塞接收超时（用于接收ACK）
+    int timeout = 100;  // 100ms短超时，用于轮询
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    
+    while (sentPackets < totalPackets) {
+        // ===== 步骤1：发送窗口内所有可发送的包（流水线发送） =====
+        while (g_sendWindow.canSend() && dataOffset < dataLen) {
+            int idx = g_sendWindow.getIndex(g_sendWindow.next_seq);
+            
+            // 计算当前包的数据长度
+            int packetDataLen = (dataLen - dataOffset > MAX_DATA_SIZE) ? 
+                                MAX_DATA_SIZE : (dataLen - dataOffset);
+            
+            // 将数据复制到发送窗口缓冲区（用于可能的重传）
+            memcpy(g_sendWindow.data_buf[idx], data + dataOffset, packetDataLen);
+            g_sendWindow.data_len[idx] = packetDataLen;
+            g_sendWindow.is_sent[idx] = 1;
+            g_sendWindow.is_ack[idx] = 0;
+            g_sendWindow.send_time[idx] = clock();  // 记录发送时间
+            
+            // 构造并发送数据包
+            Packet dataPacket;
+            dataPacket.header.seq = g_sendWindow.next_seq;
+            dataPacket.header.ack = 0;
+            dataPacket.header.flag = FLAG_ACK;  // 数据包带ACK标志
+            dataPacket.header.win = FIXED_WINDOW_SIZE;  // 携带窗口大小（流量控制）
+            dataPacket.setData(g_sendWindow.data_buf[idx], packetDataLen);
+            
+            char sendBuffer[MAX_PACKET_SIZE];
+            dataPacket.serialize(sendBuffer);
+            int bytesSent = sendto(clientSocket, sendBuffer, dataPacket.getTotalLen(), 0,
+                                  (sockaddr*)&serverAddr, sizeof(serverAddr));
+            
+            if (bytesSent == SOCKET_ERROR) {
+                std::cerr << "[错误] 发送数据包失败: " << WSAGetLastError() << std::endl;
+                return false;
+            }
+            
+            std::cout << "[Send] Data packet seq=" << g_sendWindow.next_seq 
+                     << ", length=" << packetDataLen 
+                     << ", window[" << g_sendWindow.base << "," 
+                     << (g_sendWindow.base + FIXED_WINDOW_SIZE - 1) << "]" << std::endl;
+            
+            dataOffset += packetDataLen;
+            g_sendWindow.next_seq++;
+        }
+        
+        // ===== 步骤2：接收ACK/SACK并处理 =====
+        char recvBuffer[MAX_PACKET_SIZE];
+        sockaddr_in fromAddr;
+        int fromAddrLen = sizeof(fromAddr);
+        
+        int bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0,
+                                     (sockaddr*)&fromAddr, &fromAddrLen);
+        
+        if (bytesReceived > 0) {
+            Packet ackPacket;
+            if (ackPacket.deserialize(recvBuffer, bytesReceived)) {
+                // 检查是否为ACK包
+                if (ackPacket.header.flag & FLAG_ACK) {
+                    std::cout << "[Receive] ACK packet ack=" << ackPacket.header.ack;
+                    
+                    // 检查是否带有SACK标志
+                    if (ackPacket.header.flag & FLAG_SACK) {
+                        // 解析SACK信息
+                        SACKInfo sackInfo;
+                        if (ackPacket.dataLen > 0 && 
+                            sackInfo.deserialize(ackPacket.data, ackPacket.dataLen)) {
+                            std::cout << ", SACK blocks=[";
+                            for (int i = 0; i < sackInfo.count; i++) {
+                                if (i > 0) std::cout << ",";
+                                std::cout << sackInfo.sack_blocks[i];
+                                // 标记SACK中的序列号为已确认
+                                if (sackInfo.sack_blocks[i] >= g_sendWindow.base &&
+                                    sackInfo.sack_blocks[i] < g_sendWindow.base + FIXED_WINDOW_SIZE) {
+                                    int sackIdx = g_sendWindow.getIndex(sackInfo.sack_blocks[i]);
+                                    g_sendWindow.is_ack[sackIdx] = 1;
+                                }
+                            }
+                            std::cout << "]" << std::endl;
+                        }
+                    }
+                    std::cout << std::endl;
+                    
+                    // 累积确认：标记所有序列号 < ack 的包为已确认
+                    for (uint32_t seq = g_sendWindow.base; seq < ackPacket.header.ack; seq++) {
+                        if (seq < g_sendWindow.base + FIXED_WINDOW_SIZE) {
+                            int idx = g_sendWindow.getIndex(seq);
+                            if (g_sendWindow.is_sent[idx] && !g_sendWindow.is_ack[idx]) {
+                                g_sendWindow.is_ack[idx] = 1;
+                                sentPackets++;
+                            }
+                        }
+                    }
+                    
+                    // 滑动窗口
+                    uint32_t oldBase = g_sendWindow.base;
+                    g_sendWindow.slideWindow();
+                    if (g_sendWindow.base > oldBase) {
+                        std::cout << "[Window Slide] base: " << oldBase << " -> " << g_sendWindow.base << std::endl;
+                    }
+                }
+            }
+        }
+        
+        // ===== 步骤3：检查超时并重传（选择性重传） =====
+        clock_t currentTime = clock();
+        for (uint32_t seq = g_sendWindow.base; seq < g_sendWindow.next_seq; seq++) {
+            int idx = g_sendWindow.getIndex(seq);
+            // 检查是否已发送但未确认且超时
+            if (g_sendWindow.is_sent[idx] && !g_sendWindow.is_ack[idx]) {
+                double elapsedMs = (double)(currentTime - g_sendWindow.send_time[idx]) * 1000.0 / CLOCKS_PER_SEC;
+                if (elapsedMs > SACK_TIMEOUT_MS) {
+                    // 超时重传该包
+                    std::cout << "[Timeout Retransmit] seq=" << seq << ", elapsed " << (int)elapsedMs << "ms" << std::endl;
+                    
+                    Packet retxPacket;
+                    retxPacket.header.seq = seq;
+                    retxPacket.header.ack = 0;
+                    retxPacket.header.flag = FLAG_ACK;
+                    retxPacket.header.win = FIXED_WINDOW_SIZE;
+                    retxPacket.setData(g_sendWindow.data_buf[idx], g_sendWindow.data_len[idx]);
+                    
+                    char sendBuffer[MAX_PACKET_SIZE];
+                    retxPacket.serialize(sendBuffer);
+                    sendto(clientSocket, sendBuffer, retxPacket.getTotalLen(), 0,
+                          (sockaddr*)&serverAddr, sizeof(serverAddr));
+                    
+                    g_sendWindow.send_time[idx] = clock();  // 重置发送时间
+                }
+            }
+        }
+    }
+    
+    std::cout << "[Pipeline Send] Data transmission completed, sent " << totalPackets << " packets" << std::endl;
+    return true;
+}
 
 // ===== 三次握手函数：建立连接 =====
 // 返回值：true表示连接成功，false表示连接失败
@@ -268,54 +433,215 @@ int main() {
         return 1;
     }
 
-    // 5. 连接已建立，发送应用数据
-    const char* message = "Hello, UDP Server!";
-    std::cout << "Sending message to server: " << message << std::endl;
-
-    Packet dataPacket;
-    dataPacket.header.seq = clientSeq;
-    dataPacket.header.ack = serverSeq;
-    dataPacket.header.flag = FLAG_ACK;  // 数据包带ACK标志
-    dataPacket.setData(message, strlen(message));
+    // 5. 连接已建立，使用流水线发送应用数据
+    // 创建测试数据：每个消息单独作为一个包发送，以测试流水线和SACK
+    // 为了让每个消息成为独立的包，我们需要将MAX_DATA_SIZE设置得较小，
+    // 或者发送更多更大的数据。这里我们构造6个大数据块，每个块约200字节，
+    // 模拟需要发送6个数据包的场景
     
-    char sendBuffer[MAX_PACKET_SIZE];
-    dataPacket.serialize(sendBuffer);
-    int bytesSent = sendto(clientSocket, sendBuffer, dataPacket.getTotalLen(), 0, 
-                           (sockaddr*)&serverAddr, sizeof(serverAddr));
-    if (bytesSent == SOCKET_ERROR) {
-        std::cerr << "Failed to send data: " << WSAGetLastError() << std::endl;
-        closesocket(clientSocket);
-        WSACleanup();
-        return 1;
+    // 创建6个测试数据包，每个约250字节
+    char testPackets[6][300];
+    int packetLens[6];
+    
+    for (int i = 0; i < 6; i++) {
+        // 填充每个包的数据
+        snprintf(testPackets[i], sizeof(testPackets[i]), 
+                "=== Packet %d ===\n"
+                "This is test packet number %d for pipeline transmission testing.\n"
+                "Testing SACK (Selective Acknowledgment) and fixed window flow control.\n"
+                "Window size = %d, this packet should be sent and acknowledged correctly.\n"
+                "Padding data to make packet larger: ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+                "End of packet %d.\n",
+                i + 1, i + 1, FIXED_WINDOW_SIZE, i + 1);
+        packetLens[i] = strlen(testPackets[i]);
     }
-
-    std::cout << "Sent " << bytesSent << " bytes to server" << std::endl;
-    clientSeq++;  // Update sequence number
-
-    // 6. 接收服务端的回显数据
-    char recvBuffer[MAX_PACKET_SIZE];
-    sockaddr_in fromAddr;
-    int fromAddrLen = sizeof(fromAddr);
+    
+    std::cout << "\n===== Testing Pipeline Send (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
+    std::cout << "Preparing to send 6 separate packets for pipeline testing" << std::endl;
+    
+    // 逐包发送，每个包独立发送以测试流水线机制
+    // 初始化发送窗口
+    g_sendWindow.reset(clientSeq);
+    
+    int totalPackets = 6;
+    int sentPackets = 0;    // 已完成发送（已确认）的包数
+    int nextPacketToSend = 0;  // 下一个要发送的包索引
+    
+    std::cout << "\n[Pipeline Send] Starting to send " << totalPackets << " packets, window size=" << FIXED_WINDOW_SIZE << std::endl;
+    
+    // 设置非阻塞接收超时（用于接收ACK）
+    int timeout = 100;  // 100ms短超时，用于轮询
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    
+    while (sentPackets < totalPackets) {
+        // ===== 步骤1：发送窗口内所有可发送的包（流水线发送） =====
+        while (g_sendWindow.canSend() && nextPacketToSend < totalPackets) {
+            int idx = g_sendWindow.getIndex(g_sendWindow.next_seq);
+            
+            // 获取当前要发送的数据
+            int packetDataLen = packetLens[nextPacketToSend];
+            
+            // 将数据复制到发送窗口缓冲区（用于可能的重传）
+            memcpy(g_sendWindow.data_buf[idx], testPackets[nextPacketToSend], packetDataLen);
+            g_sendWindow.data_len[idx] = packetDataLen;
+            g_sendWindow.is_sent[idx] = 1;
+            g_sendWindow.is_ack[idx] = 0;
+            g_sendWindow.send_time[idx] = clock();  // 记录发送时间
+            
+            // 构造并发送数据包
+            Packet dataPacket;
+            dataPacket.header.seq = g_sendWindow.next_seq;
+            dataPacket.header.ack = 0;
+            dataPacket.header.flag = FLAG_ACK;  // 数据包带ACK标志
+            dataPacket.header.win = FIXED_WINDOW_SIZE;  // 携带窗口大小（流量控制）
+            dataPacket.setData(g_sendWindow.data_buf[idx], packetDataLen);
+            
+            char sendBuffer[MAX_PACKET_SIZE];
+            dataPacket.serialize(sendBuffer);
+            int bytesSent = sendto(clientSocket, sendBuffer, dataPacket.getTotalLen(), 0,
+                                  (sockaddr*)&serverAddr, sizeof(serverAddr));
+            
+            if (bytesSent == SOCKET_ERROR) {
+                std::cerr << "[Error] Failed to send data packet: " << WSAGetLastError() << std::endl;
+                closesocket(clientSocket);
+                WSACleanup();
+                return 1;
+            }
+            
+            std::cout << "[Send] Data packet seq=" << g_sendWindow.next_seq 
+                     << ", length=" << packetDataLen 
+                     << ", window[" << g_sendWindow.base << "," 
+                     << (g_sendWindow.base + FIXED_WINDOW_SIZE - 1) << "]" << std::endl;
+            
+            nextPacketToSend++;
+            g_sendWindow.next_seq++;
+        }
+        
+        // ===== 步骤2：接收ACK/SACK并处理 =====
+        char recvBuffer[MAX_PACKET_SIZE];
+        sockaddr_in fromAddr;
+        int fromAddrLen = sizeof(fromAddr);
+        
+        int bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0,
+                                     (sockaddr*)&fromAddr, &fromAddrLen);
+        
+        if (bytesReceived > 0) {
+            Packet ackPacket;
+            if (ackPacket.deserialize(recvBuffer, bytesReceived)) {
+                // 检查是否为ACK包
+                if (ackPacket.header.flag & FLAG_ACK) {
+                    std::cout << "[Receive] ACK packet ack=" << ackPacket.header.ack;
+                    
+                    // 检查是否带有SACK标志
+                    if (ackPacket.header.flag & FLAG_SACK) {
+                        // 解析SACK信息
+                        SACKInfo sackInfo;
+                        if (ackPacket.dataLen > 0 && 
+                            sackInfo.deserialize(ackPacket.data, ackPacket.dataLen)) {
+                            std::cout << ", SACK blocks=[";
+                            for (int i = 0; i < sackInfo.count; i++) {
+                                if (i > 0) std::cout << ",";
+                                std::cout << sackInfo.sack_blocks[i];
+                                // 标记SACK中的序列号为已确认
+                                if (sackInfo.sack_blocks[i] >= g_sendWindow.base &&
+                                    sackInfo.sack_blocks[i] < g_sendWindow.base + FIXED_WINDOW_SIZE) {
+                                    int sackIdx = g_sendWindow.getIndex(sackInfo.sack_blocks[i]);
+                                    g_sendWindow.is_ack[sackIdx] = 1;
+                                }
+                            }
+                            std::cout << "]";
+                        }
+                    }
+                    std::cout << std::endl;
+                    
+                    // 累积确认：标记所有序列号 < ack 的包为已确认，并滑动窗口
+                    uint32_t ackNum = ackPacket.header.ack;
+                    while (g_sendWindow.base < ackNum && g_sendWindow.base < g_sendWindow.next_seq) {
+                        int idx = g_sendWindow.getIndex(g_sendWindow.base);
+                        // 只要base向前移动，就表示一个包被确认
+                        // 注意：如果包之前被SACK标记过，is_ack已经是1，不重复计数
+                        if (!g_sendWindow.is_ack[idx]) {
+                            sentPackets++;
+                            std::cout << "[Confirmed] seq=" << g_sendWindow.base << ", sentPackets=" << sentPackets << "/" << totalPackets << std::endl;
+                        } else {
+                            // 被SACK过的包，现在被累积确认
+                            sentPackets++;
+                            std::cout << "[SACK->Confirmed] seq=" << g_sendWindow.base << ", sentPackets=" << sentPackets << "/" << totalPackets << std::endl;
+                        }
+                        // 清除当前位置状态并滑动窗口
+                        g_sendWindow.is_sent[idx] = 0;
+                        g_sendWindow.is_ack[idx] = 0;
+                        g_sendWindow.data_len[idx] = 0;
+                        g_sendWindow.base++;
+                    }
+                    std::cout << "[Window Slide] base -> " << g_sendWindow.base << std::endl;
+                }
+            }
+        }
+        
+        // ===== 步骤3：检查超时并重传（选择性重传） =====
+        clock_t currentTime = clock();
+        for (uint32_t seq = g_sendWindow.base; seq < g_sendWindow.next_seq; seq++) {
+            int idx = g_sendWindow.getIndex(seq);
+            // 检查是否已发送但未确认且超时
+            if (g_sendWindow.is_sent[idx] && !g_sendWindow.is_ack[idx]) {
+                double elapsedMs = (double)(currentTime - g_sendWindow.send_time[idx]) * 1000.0 / CLOCKS_PER_SEC;
+                if (elapsedMs > SACK_TIMEOUT_MS) {
+                    // 超时重传该包
+                    std::cout << "[Timeout Retransmit] seq=" << seq << ", elapsed " << (int)elapsedMs << "ms" << std::endl;
+                    
+                    Packet retxPacket;
+                    retxPacket.header.seq = seq;
+                    retxPacket.header.ack = 0;
+                    retxPacket.header.flag = FLAG_ACK;
+                    retxPacket.header.win = FIXED_WINDOW_SIZE;
+                    retxPacket.setData(g_sendWindow.data_buf[idx], g_sendWindow.data_len[idx]);
+                    
+                    char sendBuffer[MAX_PACKET_SIZE];
+                    retxPacket.serialize(sendBuffer);
+                    sendto(clientSocket, sendBuffer, retxPacket.getTotalLen(), 0,
+                          (sockaddr*)&serverAddr, sizeof(serverAddr));
+                    
+                    g_sendWindow.send_time[idx] = clock();  // 重置发送时间
+                }
+            }
+        }
+    }
+    
+    std::cout << "[Pipeline Send] Data transmission completed, sent " << totalPackets << " packets" << std::endl;
+    
+    // 更新序列号
+    clientSeq = g_sendWindow.next_seq;
+    
+    // 等待服务端处理完成
+    Sleep(1000);
+    
+    // 6. 接收服务端的确认响应
+    char finalRecvBuffer[MAX_PACKET_SIZE];
+    sockaddr_in finalFromAddr;
+    int finalFromAddrLen = sizeof(finalFromAddr);
     
     // 设置接收超时
-    int timeout = 5000;  // 5秒超时
+    timeout = 5000;  // 5秒超时
     setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 
-    int bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0, 
-                                 (sockaddr*)&fromAddr, &fromAddrLen);
-    if (bytesReceived == SOCKET_ERROR) {
+    std::cout << "\nWaiting for server's final confirmation..." << std::endl;
+    int finalBytesReceived = recvfrom(clientSocket, finalRecvBuffer, MAX_PACKET_SIZE, 0, 
+                                 (sockaddr*)&finalFromAddr, &finalFromAddrLen);
+    if (finalBytesReceived == SOCKET_ERROR) {
         if (WSAGetLastError() == WSAETIMEDOUT) {
-            std::cerr << "Receive timeout" << std::endl;
+            std::cout << "Receive timeout (server may have finished processing)" << std::endl;
         } else {
             std::cerr << "Receive failed: " << WSAGetLastError() << std::endl;
         }
     } else {
-        Packet recvPacket;
-        if (recvPacket.deserialize(recvBuffer, bytesReceived)) {
-            recvPacket.data[recvPacket.dataLen] = '\0';
-            std::cout << "Received server echo: " << recvPacket.data << std::endl;
-            std::cout << "Received " << recvPacket.dataLen << " bytes of data" << std::endl;
-            serverSeq = recvPacket.header.seq + 1;  // Update server sequence number
+        Packet finalRecvPacket;
+        if (finalRecvPacket.deserialize(finalRecvBuffer, finalBytesReceived)) {
+            if (finalRecvPacket.dataLen > 0) {
+                finalRecvPacket.data[finalRecvPacket.dataLen] = '\0';
+                std::cout << "Received server response: " << finalRecvPacket.data << std::endl;
+            }
+            serverSeq = finalRecvPacket.header.seq + 1;
         } else {
             std::cout << "Packet checksum failed" << std::endl;
         }

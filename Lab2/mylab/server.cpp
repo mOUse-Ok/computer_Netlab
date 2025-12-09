@@ -8,6 +8,210 @@
 #define PORT 8888  // 服务端监听端口
 #define BUFFER_SIZE 1024  // 缓冲区大小
 
+// ===== 全局接收窗口 =====
+// 描述：用于管理流水线接收的滑动窗口状态
+RecvWindow g_recvWindow;
+
+// ===== 模拟丢包标志 =====
+// 描述：用于测试SACK功能，设置为true时会丢弃特定序列号的包
+bool g_simulateLoss = false;
+uint32_t g_lossSeq = 0;  // 要丢弃的序列号
+
+// ===== 发送ACK/SACK响应 =====
+// 描述：发送确认包，支持累积确认和选择确认
+// 参数：
+//   serverSocket - 服务端套接字
+//   clientAddr   - 客户端地址
+//   addrLen      - 地址结构长度
+//   ackNum       - 确认号（期望接收的下一个序列号）
+//   serverSeq    - 服务端序列号
+//   useSACK      - 是否使用选择确认
+void sendACK(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
+             uint32_t ackNum, uint32_t serverSeq, bool useSACK) {
+    Packet ackPacket;
+    ackPacket.header.seq = serverSeq;
+    ackPacket.header.ack = ackNum;
+    ackPacket.header.flag = FLAG_ACK;
+    ackPacket.header.win = FIXED_WINDOW_SIZE;  // 携带固定窗口大小（流量控制）
+    
+    // 如果使用SACK，生成并携带选择确认信息
+    if (useSACK) {
+        ackPacket.header.flag |= FLAG_SACK;  // 设置SACK标志
+        
+        // 生成SACK信息
+        SACKInfo sackInfo;
+        sackInfo.count = g_recvWindow.generateSACK(sackInfo.sack_blocks, MAX_SACK_BLOCKS);
+        
+        // 将SACK信息序列化到数据部分
+        char sackData[64];
+        int sackLen = sackInfo.serialize(sackData);
+        ackPacket.setData(sackData, sackLen);
+        
+        std::cout << "[Send] ACK+SACK packet ack=" << ackNum << ", SACK blocks=[";
+        for (int i = 0; i < sackInfo.count; i++) {
+            if (i > 0) std::cout << ",";
+            std::cout << sackInfo.sack_blocks[i];
+        }
+        std::cout << "], win=" << FIXED_WINDOW_SIZE << std::endl;
+    } else {
+        ackPacket.header.len = 0;
+        ackPacket.dataLen = 0;
+        ackPacket.header.calculateChecksum(ackPacket.data, 0);
+        std::cout << "[Send] ACK packet ack=" << ackNum << ", win=" << FIXED_WINDOW_SIZE << std::endl;
+    }
+    
+    char sendBuffer[MAX_PACKET_SIZE];
+    ackPacket.serialize(sendBuffer);
+    sendto(serverSocket, sendBuffer, ackPacket.getTotalLen(), 0,
+          (sockaddr*)&clientAddr, addrLen);
+}
+
+// ===== 流水线接收数据函数（支持SACK） =====
+// 描述：使用滑动窗口接收数据，支持选择确认和固定窗口流量控制
+// 参数：
+//   serverSocket - 服务端套接字
+//   clientAddr   - 客户端地址
+//   addrLen      - 地址结构长度
+//   baseSeq      - 起始序列号（期望接收的第一个包序列号）
+//   serverSeq    - 服务端序列号（用于发送ACK）
+//   finReceived  - 输出参数：是否收到FIN包
+//   finSeq       - 输出参数：FIN包的序列号
+// 返回值：接收到的总数据长度，失败返回-1
+int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
+                 uint32_t baseSeq, uint32_t& serverSeq, bool& finReceived, uint32_t& finSeq) {
+    // 初始化接收窗口
+    g_recvWindow.reset(baseSeq);
+    
+    // 初始化FIN标志
+    finReceived = false;
+    finSeq = 0;
+    
+    // 存储接收到的完整数据
+    static char receivedData[8192];
+    int totalReceived = 0;
+    
+    std::cout << "\n[Pipeline Receive] Starting to receive data, window size=" << FIXED_WINDOW_SIZE 
+              << ", starting sequence number=" << baseSeq << std::endl;
+    
+    // 设置接收超时
+    int timeout = 5000;  // 5秒超时
+    setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    
+    int idleCount = 0;  // 空闲计数器
+    int maxIdleCount = 3;  // 最大空闲次数
+    
+    while (idleCount < maxIdleCount) {
+        char recvBuffer[MAX_PACKET_SIZE];
+        sockaddr_in fromAddr;
+        int fromAddrLen = sizeof(fromAddr);
+        
+        int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
+                                     (sockaddr*)&fromAddr, &fromAddrLen);
+        
+        if (bytesReceived == SOCKET_ERROR) {
+            if (WSAGetLastError() == WSAETIMEDOUT) {
+                idleCount++;
+                std::cout << "[Timeout] Waiting for data packet timeout (" << idleCount << "/" << maxIdleCount << ")" << std::endl;
+                continue;
+            }
+            std::cerr << "[Error] Receive failed: " << WSAGetLastError() << std::endl;
+            return -1;
+        }
+        
+        idleCount = 0;  // 重置空闲计数器
+        
+        // 解析接收到的包
+        Packet recvPacket;
+        if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
+            std::cout << "[Error] Packet checksum failed, discarded" << std::endl;
+            continue;
+        }
+        
+        // 检查是否为FIN包（客户端请求关闭连接）
+        if (recvPacket.header.flag & FLAG_FIN) {
+            std::cout << "[Receive] FIN packet seq=" << recvPacket.header.seq << std::endl;
+            // 设置FIN标志并返回
+            finReceived = true;
+            finSeq = recvPacket.header.seq;
+            return totalReceived;
+        }
+        
+        uint32_t recvSeq = recvPacket.header.seq;
+        
+        // ===== 模拟丢包（用于测试SACK） =====
+        if (g_simulateLoss && recvSeq == g_lossSeq) {
+            std::cout << "[Simulate Loss] Discard seq=" << recvSeq << " data packet" << std::endl;
+            g_simulateLoss = false;  // 只丢弃一次
+            continue;
+        }
+        
+        // 检查序列号是否在窗口范围内
+        if (g_recvWindow.inWindow(recvSeq)) {
+            int idx = g_recvWindow.getIndex(recvSeq);
+            
+            // 检查是否是重复包
+            if (g_recvWindow.is_received[idx]) {
+                std::cout << "[Duplicate] Received duplicate packet seq=" << recvSeq << ", sending ACK" << std::endl;
+            } else {
+                // 缓存数据包
+                memcpy(g_recvWindow.data_buf[idx], recvPacket.data, recvPacket.dataLen);
+                g_recvWindow.data_len[idx] = recvPacket.dataLen;
+                g_recvWindow.is_received[idx] = 1;
+                
+                std::cout << "[Receive] Data packet seq=" << recvSeq 
+                         << ", length=" << recvPacket.dataLen
+                         << ", window[" << g_recvWindow.base << "," 
+                         << (g_recvWindow.base + FIXED_WINDOW_SIZE - 1) << "]";
+                
+                // 显示数据内容（如果是可打印字符）
+                if (recvPacket.dataLen > 0 && recvPacket.dataLen < 100) {
+                    char tempBuf[128];
+                    memcpy(tempBuf, recvPacket.data, recvPacket.dataLen);
+                    tempBuf[recvPacket.dataLen] = '\0';
+                    std::cout << ", content: " << tempBuf;
+                }
+                std::cout << std::endl;
+            }
+            
+            // 尝试滑动窗口并取出连续数据
+            uint32_t oldBase = g_recvWindow.base;
+            int dataLen = g_recvWindow.slideAndGetData(receivedData + totalReceived, 
+                                                       sizeof(receivedData) - totalReceived);
+            totalReceived += dataLen;
+            
+            if (g_recvWindow.base > oldBase) {
+                std::cout << "[Window Slide] base: " << oldBase << " -> " << g_recvWindow.base << std::endl;
+            }
+            
+            // 检查是否需要发送SACK（窗口内有非连续的已接收包）
+            bool needSACK = false;
+            for (uint32_t seq = g_recvWindow.base; seq < g_recvWindow.base + FIXED_WINDOW_SIZE; seq++) {
+                int checkIdx = g_recvWindow.getIndex(seq);
+                if (g_recvWindow.is_received[checkIdx] && seq > g_recvWindow.base) {
+                    // 存在非连续的已接收包，需要SACK
+                    needSACK = true;
+                    break;
+                }
+            }
+            
+            // 发送ACK/SACK
+            sendACK(serverSocket, clientAddr, addrLen, g_recvWindow.base, serverSeq, needSACK);
+            
+        } else if (recvSeq < g_recvWindow.base) {
+            // 收到旧包（序列号小于窗口base），说明之前的ACK可能丢失，重发ACK
+            std::cout << "[Old Packet] seq=" << recvSeq << " < base=" << g_recvWindow.base 
+                     << ", resending ACK" << std::endl;
+            sendACK(serverSocket, clientAddr, addrLen, g_recvWindow.base, serverSeq, false);
+        } else {
+            // 序列号超出窗口范围，丢弃（流量控制）
+            std::cout << "[Out of Window] seq=" << recvSeq << " out of window range, discarded" << std::endl;
+        }
+    }
+    
+        std::cout << "[Pipeline Receive] Reception completed, received " << totalReceived << " bytes of data" << std::endl;
+    return totalReceived;
+}
+
 // ===== 服务端处理三次握手 =====
 // 返回值：true表示连接建立成功，false表示失败
 bool acceptConnection(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t& clientSeq, uint32_t& serverSeq) {
@@ -175,7 +379,7 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
     
     Packet recvPacket;
     if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
-        std::cout << "[错误] 数据包校验失败" << std::endl;
+        std::cout << "[Error] Packet checksum failed" << std::endl;
         return false;
     }
     
@@ -242,73 +446,73 @@ int main() {
         return 1;
     }
 
-    // 6. 连接已建立，接收和处理数据
-    ConnectionState state = ESTABLISHED;
-    char recvBuffer[MAX_PACKET_SIZE];
+    // 6. 连接已建立，使用流水线接收数据（支持SACK）
+    std::cout << "\n===== Pipeline Receive Mode (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
+    
+    // 注意：如需测试SACK功能，取消下面两行注释以启用丢包模拟
+    // g_simulateLoss = true;
+    // g_lossSeq = clientSeq + 1;  // 丢弃第2个包
+    // std::cout << "[Simulate Loss] Will discard seq=" << g_lossSeq << " data packet to test SACK" << std::endl;
+    
+    // 使用流水线方式接收数据
     int clientAddrLen = sizeof(clientAddr);
+    bool finReceived = false;
+    uint32_t finSeq = 0;
+    int receivedLen = pipelineRecv(serverSocket, clientAddr, clientAddrLen, clientSeq, serverSeq, finReceived, finSeq);
     
-    // 设置非阻塞接收超时
-    int timeout = 10000;  // 10秒超时
-    setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    if (receivedLen > 0) {
+        std::cout << "\n[Summary] Successfully received " << receivedLen << " bytes of data" << std::endl;
+    } else if (receivedLen < 0) {
+        std::cerr << "[Error] Data reception failed" << std::endl;
+    }
     
-    bool connectionActive = true;
-    while (connectionActive) {
-        // 接收客户端消息
-        int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                     (sockaddr*)&clientAddr, &clientAddrLen);
+    // 如果收到了FIN包，直接处理四次挥手
+    if (finReceived) {
+        clientSeq = finSeq;
+        if (handleClose(serverSocket, clientAddr, clientSeq, serverSeq)) {
+            std::cout << "[Success] Connection closed successfully" << std::endl;
+        }
+    } else {
+        // 等待客户端关闭连接或超时
+        ConnectionState state = ESTABLISHED;
+        char recvBuffer[MAX_PACKET_SIZE];
         
-        if (bytesReceived == SOCKET_ERROR) {
-            if (WSAGetLastError() == WSAETIMEDOUT) {
-                std::cout << "[Timeout] Connection idle timeout, client may have disconnected" << std::endl;
+        // 设置非阻塞接收超时
+        int timeout = 10000;  // 10秒超时
+        setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+        
+        bool connectionActive = true;
+        while (connectionActive) {
+            // 接收客户端消息
+            int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
+                                         (sockaddr*)&clientAddr, &clientAddrLen);
+            
+            if (bytesReceived == SOCKET_ERROR) {
+                if (WSAGetLastError() == WSAETIMEDOUT) {
+                    std::cout << "[Timeout] Connection idle timeout, client may have disconnected" << std::endl;
+                    break;
+                }
+                std::cerr << "[Error] Receive failed: " << WSAGetLastError() << std::endl;
+                continue;
+            }
+            
+            // 解析接收到的包
+            Packet recvPacket;
+            if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
+                std::cout << "[Error] Packet checksum failed, discarded" << std::endl;
+                continue;
+            }
+            
+            // 检查是否为FIN包（客户端请求关闭）
+            if (recvPacket.header.flag & FLAG_FIN) {
+                std::cout << "[Receive] FIN packet seq=" << recvPacket.header.seq << std::endl;
+                clientSeq = recvPacket.header.seq;
+                
+                // 处理四次挥手
+                if (handleClose(serverSocket, clientAddr, clientSeq, serverSeq)) {
+                    connectionActive = false;
+                }
                 break;
-            }
-            std::cerr << "[Error] Receive failed: " << WSAGetLastError() << std::endl;
-            continue;
-        }
-        
-        // 解析接收到的包
-        Packet recvPacket;
-        if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
-            std::cout << "[Error] Packet checksum failed, discarded" << std::endl;
-            continue;
-        }
-        
-        // 检查是否为FIN包（客户端请求关闭）
-        if (recvPacket.header.flag & FLAG_FIN) {
-            std::cout << "[Received] FIN packet (seq=" << recvPacket.header.seq << ")" << std::endl;
-            clientSeq = recvPacket.header.seq;
-            
-            // Handle four-way handshake
-            if (handleClose(serverSocket, clientAddr, clientSeq, serverSeq)) {
-                connectionActive = false;
-            }
-            break;
-        }
-        
-        // 处理普通数据包
-        if (recvPacket.dataLen > 0) {
-            recvPacket.data[recvPacket.dataLen] = '\0';
-            std::cout << "[Received] Data packet (seq=" << recvPacket.header.seq 
-                     << ", data length=" << recvPacket.dataLen << ")" << std::endl;
-            std::cout << "Data content: " << recvPacket.data << std::endl;
-            
-            // 回显消息给客户端
-            Packet echoPacket;
-            echoPacket.header.seq = serverSeq;
-            echoPacket.header.ack = recvPacket.header.seq + 1;
-            echoPacket.header.flag = FLAG_ACK;
-            echoPacket.setData(recvPacket.data, recvPacket.dataLen);
-            
-            char sendBuffer[MAX_PACKET_SIZE];
-            echoPacket.serialize(sendBuffer);
-            int bytesSent = sendto(serverSocket, sendBuffer, echoPacket.getTotalLen(), 0,
-                                  (sockaddr*)&clientAddr, clientAddrLen);
-            
-            if (bytesSent == SOCKET_ERROR) {
-                std::cerr << "[Error] Failed to send echo data: " << WSAGetLastError() << std::endl;
-            } else {
-                std::cout << "[Sent] Echo packet (seq=" << serverSeq << ", length=" << echoPacket.dataLen << ")" << std::endl;
-                serverSeq++;
             }
         }
     }
