@@ -15,7 +15,7 @@ RecvWindow g_recvWindow;
 // ===== 模拟丢包标志 =====
 // 描述：用于测试SACK功能，设置为true时会丢弃特定序列号的包
 bool g_simulateLoss = false;
-uint32_t g_lossSeq = 0;  // 要丢弃的序列号
+uint32_t g_lossSeq;  // 要丢弃的序列号
 
 // ===== 发送ACK/SACK响应 =====
 // 描述：发送确认包，支持累积确认和选择确认
@@ -450,8 +450,7 @@ int main() {
     std::cout << "\n===== Pipeline Receive Mode (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
     
     // 注意：如需测试SACK功能，取消下面两行注释以启用丢包模拟
-    // g_simulateLoss = true;
-    // g_lossSeq = clientSeq + 1;  // 丢弃第2个包
+    g_lossSeq = clientSeq + 1;  // 丢弃第2个包
     // std::cout << "[Simulate Loss] Will discard seq=" << g_lossSeq << " data packet to test SACK" << std::endl;
     
     // 使用流水线方式接收数据
