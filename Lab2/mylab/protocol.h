@@ -19,6 +19,14 @@ enum ConnectionState {
     LAST_ACK       // 被动关闭方：已发送FIN，等待最后的ACK
 };
 
+// ===== RENO 拥塞控制阶段枚举 =====
+// 描述：用于跟踪 TCP RENO 拥塞控制算法的当前阶段
+enum RenoPhase {
+    SLOW_START,           // 慢启动阶段：cwnd 指数增长
+    CONGESTION_AVOIDANCE, // 拥塞避免阶段：cwnd 线性增长
+    FAST_RECOVERY         // 快速恢复阶段：收到重复 ACK 后的恢复过程
+};
+
 // ===== 标志位定义 =====
 // 描述：用于标识数据包类型，可以组合使用（如 FLAG_SYN | FLAG_ACK）
 #define FLAG_SYN  0x01  // 同步标志（0000 0001）：用于建立连接
@@ -37,6 +45,13 @@ enum ConnectionState {
 #define TIME_WAIT_MS 4000         // TIME_WAIT状态等待时间（2*MSL，这里设为4秒）
 #define HEARTBEAT_INTERVAL_MS 1000  // 心跳间隔：1秒
 #define CONNECTION_TIMEOUT_MS 5000  // 连接超时：5秒无响应则认为断开
+
+// ===== RENO 拥塞控制相关常量 =====
+// 描述：用于实现 TCP RENO 拥塞控制算法
+#define INITIAL_CWND 1                // 初始拥塞窗口大小（单位：包数）
+#define INITIAL_SSTHRESH 32           // 初始慢启动阈值（单位：包数）
+#define MIN_SSTHRESH 2                // 最小慢启动阈值（单位：包数）
+#define DUP_ACK_THRESHOLD 3           // 触发快速重传的重复 ACK 阈值
 
 // ===== 流水线传输与选择确认（SACK）相关常量 =====
 // 描述：用于流水线传输、固定窗口流量控制和选择确认功能
@@ -57,9 +72,18 @@ struct SendWindow {
     int data_len[FIXED_WINDOW_SIZE];            // 窗口内包的实际数据长度
     clock_t send_time[FIXED_WINDOW_SIZE];       // 每个包的发送时间（用于超时判断）
     
+    // ===== RENO 拥塞控制相关字段 =====
+    // 描述：实现 TCP RENO 拥塞控制算法的核心参数
+    uint32_t cwnd;                              // 拥塞窗口大小（单位：包数）
+    uint32_t ssthresh;                          // 慢启动阈值（单位：包数）
+    uint32_t dup_ack_count;                     // 重复 ACK 计数器（用于检测丢包）
+    uint32_t last_ack;                          // 上一次收到的 ACK 序列号（用于检测重复 ACK）
+    RenoPhase reno_phase;                       // 当前 RENO 阶段
+    
     // ===== 默认构造函数 =====
-    // 描述：初始化发送窗口所有字段为默认值
-    SendWindow() : base(0), next_seq(0) {
+    // 描述：初始化发送窗口所有字段为默认值，包括 RENO 拥塞控制参数
+    SendWindow() : base(0), next_seq(0), cwnd(INITIAL_CWND), ssthresh(INITIAL_SSTHRESH),
+                   dup_ack_count(0), last_ack(0), reno_phase(SLOW_START) {
         // 初始化所有数组为0
         memset(is_sent, 0, sizeof(is_sent));
         memset(is_ack, 0, sizeof(is_ack));
@@ -69,7 +93,7 @@ struct SendWindow {
     }
     
     // ===== 重置窗口 =====
-    // 描述：重置发送窗口到初始状态
+    // 描述：重置发送窗口到初始状态，包括 RENO 拥塞控制参数
     // 参数：initial_seq - 初始序列号
     void reset(uint32_t initial_seq) {
         base = initial_seq;
@@ -79,13 +103,31 @@ struct SendWindow {
         memset(data_buf, 0, sizeof(data_buf));
         memset(data_len, 0, sizeof(data_len));
         memset(send_time, 0, sizeof(send_time));
+        
+        // 重置 RENO 拥塞控制参数到初始状态
+        cwnd = INITIAL_CWND;
+        ssthresh = INITIAL_SSTHRESH;
+        dup_ack_count = 0;
+        last_ack = initial_seq;
+        reno_phase = SLOW_START;
+    }
+    
+    // ===== 获取有效发送窗口大小 =====
+    // 描述：返回实际可用的发送窗口大小（拥塞窗口 cwnd 与固定窗口的最小值）
+    // 说明：遵循 "拥塞控制优先于流量控制" 原则
+    // 返回值：有效窗口大小（单位：包数）
+    uint32_t getEffectiveWindow() const {
+        // 返回拥塞窗口和固定窗口的最小值
+        return (cwnd < FIXED_WINDOW_SIZE) ? cwnd : FIXED_WINDOW_SIZE;
     }
     
     // ===== 检查窗口是否可发送新包 =====
-    // 描述：判断当前是否可以发送新的数据包
+    // 描述：判断当前是否可以发送新的数据包（考虑 RENO 拥塞窗口限制）
     // 返回值：true表示可以发送，false表示窗口已满
     bool canSend() const {
-        return (next_seq < base + FIXED_WINDOW_SIZE);
+        // 使用有效窗口大小（拥塞窗口和固定窗口的最小值）
+        uint32_t effectiveWindow = getEffectiveWindow();
+        return (next_seq < base + effectiveWindow);
     }
     
     // ===== 获取窗口内的索引 =====
@@ -110,6 +152,114 @@ struct SendWindow {
             data_len[idx] = 0;
             base++;  // 窗口向前滑动
         }
+    }
+    
+    // ===== RENO 拥塞控制：处理新 ACK =====
+    // 描述：根据 RENO 算法处理新收到的 ACK，更新拥塞窗口
+    // 参数：ack_num - 收到的 ACK 序列号
+    // 返回值：true 表示是新 ACK，false 表示是重复 ACK
+    bool handleNewACK(uint32_t ack_num) {
+        // 检查是否是新 ACK（确认了新的数据）
+        if (ack_num > last_ack) {
+            // 收到新 ACK，重置重复 ACK 计数器
+            dup_ack_count = 0;
+            last_ack = ack_num;
+            
+            // 根据当前阶段更新拥塞窗口
+            if (reno_phase == SLOW_START) {
+                // ===== 慢启动阶段：每收到 1 个新 ACK，cwnd += 1（指数增长） =====
+                cwnd++;
+                
+                // 检查是否达到慢启动阈值，切换到拥塞避免阶段
+                if (cwnd >= ssthresh) {
+                    reno_phase = CONGESTION_AVOIDANCE;
+                    std::cout << "[RENO] Phase transition: SLOW_START -> CONGESTION_AVOIDANCE (cwnd=" 
+                             << cwnd << ", ssthresh=" << ssthresh << ")" << std::endl;
+                } else {
+                    std::cout << "[RENO] Slow Start: cwnd=" << cwnd 
+                             << ", ssthresh=" << ssthresh << std::endl;
+                }
+            } else if (reno_phase == CONGESTION_AVOIDANCE) {
+                // ===== 拥塞避免阶段：每收到 1 个新 ACK，cwnd += 1/cwnd（线性增长） =====
+                // 使用加法增长：每收到 cwnd 个 ACK，cwnd 增加 1
+                // 实现方式：使用静态计数器，累积到 cwnd 时增加窗口
+                static uint32_t ack_count = 0;
+                ack_count++;
+                if (ack_count >= cwnd) {
+                    cwnd++;
+                    ack_count = 0;
+                    std::cout << "[RENO] Congestion Avoidance: cwnd increased to " << cwnd << std::endl;
+                }
+            } else if (reno_phase == FAST_RECOVERY) {
+                // ===== 快速恢复阶段：收到新 ACK，退出快速恢复，进入拥塞避免 =====
+                cwnd = ssthresh;
+                reno_phase = CONGESTION_AVOIDANCE;
+                std::cout << "[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=" 
+                         << cwnd << ", ssthresh=" << ssthresh << ")" << std::endl;
+            }
+            
+            return true;  // 是新 ACK
+        } else if (ack_num == last_ack) {
+            // ===== 收到重复 ACK =====
+            dup_ack_count++;
+            std::cout << "[RENO] Duplicate ACK received (count=" << dup_ack_count 
+                     << ", ack=" << ack_num << ")" << std::endl;
+            
+            // 检查是否达到快速重传阈值（3 个重复 ACK）
+            if (dup_ack_count == DUP_ACK_THRESHOLD) {
+                // ===== 触发快速重传和快速恢复 =====
+                handleFastRetransmit();
+            } else if (reno_phase == FAST_RECOVERY) {
+                // ===== 快速恢复阶段：每收到 1 个重复 ACK，cwnd += 1 =====
+                cwnd++;
+                std::cout << "[RENO] Fast Recovery: cwnd inflated to " << cwnd << std::endl;
+            }
+            
+            return false;  // 是重复 ACK
+        }
+        
+        return false;
+    }
+    
+    // ===== RENO 拥塞控制：处理快速重传 =====
+    // 描述：收到 3 个重复 ACK 时触发，执行快速重传和快速恢复
+    void handleFastRetransmit() {
+        std::cout << "[RENO] Fast Retransmit triggered (3 duplicate ACKs)" << std::endl;
+        
+        // 1. 更新慢启动阈值：ssthresh = max(cwnd/2, 2)
+        ssthresh = (cwnd / 2 > MIN_SSTHRESH) ? (cwnd / 2) : MIN_SSTHRESH;
+        
+        // 2. 设置拥塞窗口：cwnd = ssthresh
+        cwnd = ssthresh;
+        
+        // 3. 进入快速恢复阶段
+        reno_phase = FAST_RECOVERY;
+        
+        std::cout << "[RENO] Entering FAST_RECOVERY (cwnd=" << cwnd 
+                 << ", ssthresh=" << ssthresh << ")" << std::endl;
+        
+        // 注意：实际的重传操作由调用者执行（在主发送循环中检测并重传丢失的包）
+    }
+    
+    // ===== RENO 拥塞控制：处理超时 =====
+    // 描述：发生超时时调用，重置拥塞窗口并进入慢启动
+    void handleTimeout() {
+        std::cout << "[RENO] Timeout detected" << std::endl;
+        
+        // 1. 更新慢启动阈值：ssthresh = max(cwnd/2, 2)
+        ssthresh = (cwnd / 2 > MIN_SSTHRESH) ? (cwnd / 2) : MIN_SSTHRESH;
+        
+        // 2. 重置拥塞窗口：cwnd = 1
+        cwnd = INITIAL_CWND;
+        
+        // 3. 重置重复 ACK 计数器
+        dup_ack_count = 0;
+        
+        // 4. 进入慢启动阶段
+        reno_phase = SLOW_START;
+        
+        std::cout << "[RENO] Timeout recovery: entering SLOW_START (cwnd=" << cwnd 
+                 << ", ssthresh=" << ssthresh << ")" << std::endl;
     }
 };
 
@@ -534,6 +684,20 @@ inline const char* getFlagName(uint8_t flag) {
     if (flag & FLAG_SACK) strcat(flagStr, "SACK ");
     if (flagStr[0] == '\0') strcpy(flagStr, "NONE");
     return flagStr;
+}
+
+// ===== 获取 RENO 阶段名称 =====
+// 描述：将 RENO 阶段枚举值转换为可读的字符串，用于调试输出
+// 参数：
+//   phase - RENO 阶段枚举值
+// 返回值：阶段名称字符串
+inline const char* getRenoPhaseName(RenoPhase phase) {
+    switch (phase) {
+        case SLOW_START:           return "SLOW_START";
+        case CONGESTION_AVOIDANCE: return "CONGESTION_AVOIDANCE";
+        case FAST_RECOVERY:        return "FAST_RECOVERY";
+        default:                   return "UNKNOWN";
+    }
 }
 
 // ===== 数据包发送工具函数 =====

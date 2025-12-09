@@ -4,6 +4,7 @@
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
 #include "protocol.h"  // 引入自定义协议头文件
 
+
 #pragma comment(lib, "ws2_32.lib")  // 链接WS2_32.lib库
 
 #define SERVER_PORT 8888  // 服务端端口
@@ -34,14 +35,17 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
     
     std::cout << "\n[Pipeline Send] Starting to send data, total length=" << dataLen 
               << ", total packets=" << totalPackets 
-              << ", window size=" << FIXED_WINDOW_SIZE << std::endl;
+              << ", initial window size=" << FIXED_WINDOW_SIZE << std::endl;
+    std::cout << "[RENO] Initial state: cwnd=" << g_sendWindow.cwnd 
+              << ", ssthresh=" << g_sendWindow.ssthresh 
+              << ", phase=" << getRenoPhaseName(g_sendWindow.reno_phase) << std::endl;
     
     // 设置非阻塞接收超时（用于接收ACK）
     int timeout = 100;  // 100ms短超时，用于轮询
     setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
     
     while (sentPackets < totalPackets) {
-        // ===== 步骤1：发送窗口内所有可发送的包（流水线发送） =====
+        // ===== 步骤1：发送窗口内所有可发送的包（流水线发送，受 RENO 拥塞窗口限制） =====
         while (g_sendWindow.canSend() && dataOffset < dataLen) {
             int idx = g_sendWindow.getIndex(g_sendWindow.next_seq);
             
@@ -77,13 +81,14 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
             std::cout << "[Send] Data packet seq=" << g_sendWindow.next_seq 
                      << ", length=" << packetDataLen 
                      << ", window[" << g_sendWindow.base << "," 
-                     << (g_sendWindow.base + FIXED_WINDOW_SIZE - 1) << "]" << std::endl;
+                     << (g_sendWindow.base + g_sendWindow.getEffectiveWindow() - 1) << "]"
+                     << ", cwnd=" << g_sendWindow.cwnd << std::endl;
             
             dataOffset += packetDataLen;
             g_sendWindow.next_seq++;
         }
         
-        // ===== 步骤2：接收ACK/SACK并处理 =====
+        // ===== 步骤2：接收ACK/SACK并处理（整合 RENO 拥塞控制） =====
         char recvBuffer[MAX_PACKET_SIZE];
         sockaddr_in fromAddr;
         int fromAddrLen = sizeof(fromAddr);
@@ -97,6 +102,9 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                 // 检查是否为ACK包
                 if (ackPacket.header.flag & FLAG_ACK) {
                     std::cout << "[Receive] ACK packet ack=" << ackPacket.header.ack;
+                    
+                    // ===== RENO 拥塞控制：处理 ACK =====
+                    bool isNewACK = g_sendWindow.handleNewACK(ackPacket.header.ack);
                     
                     // 检查是否带有SACK标志
                     if (ackPacket.header.flag & FLAG_SACK) {
@@ -137,18 +145,54 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                     if (g_sendWindow.base > oldBase) {
                         std::cout << "[Window Slide] base: " << oldBase << " -> " << g_sendWindow.base << std::endl;
                     }
+                    
+                    // ===== RENO 快速重传处理 =====
+                    // 如果检测到快速重传（3个重复ACK），立即重传丢失的包
+                    if (g_sendWindow.dup_ack_count == DUP_ACK_THRESHOLD && 
+                        g_sendWindow.reno_phase == FAST_RECOVERY) {
+                        // 重传丢失的包（base位置的包）
+                        uint32_t lostSeq = g_sendWindow.last_ack;
+                        if (lostSeq >= g_sendWindow.base && lostSeq < g_sendWindow.next_seq) {
+                            int lostIdx = g_sendWindow.getIndex(lostSeq);
+                            
+                            std::cout << "[RENO] Fast Retransmit: retransmitting seq=" << lostSeq << std::endl;
+                            
+                            Packet retxPacket;
+                            retxPacket.header.seq = lostSeq;
+                            retxPacket.header.ack = 0;
+                            retxPacket.header.flag = FLAG_ACK;
+                            retxPacket.header.win = FIXED_WINDOW_SIZE;
+                            retxPacket.setData(g_sendWindow.data_buf[lostIdx], g_sendWindow.data_len[lostIdx]);
+                            
+                            char sendBuffer[MAX_PACKET_SIZE];
+                            retxPacket.serialize(sendBuffer);
+                            sendto(clientSocket, sendBuffer, retxPacket.getTotalLen(), 0,
+                                  (sockaddr*)&serverAddr, sizeof(serverAddr));
+                            
+                            g_sendWindow.send_time[lostIdx] = clock();  // 更新发送时间
+                        }
+                    }
                 }
             }
         }
         
-        // ===== 步骤3：检查超时并重传（选择性重传） =====
+        // ===== 步骤3：检查超时并重传（选择性重传，整合 RENO 超时处理） =====
         clock_t currentTime = clock();
+        bool hasTimeout = false;  // 标记是否发生超时
+        
         for (uint32_t seq = g_sendWindow.base; seq < g_sendWindow.next_seq; seq++) {
             int idx = g_sendWindow.getIndex(seq);
             // 检查是否已发送但未确认且超时
             if (g_sendWindow.is_sent[idx] && !g_sendWindow.is_ack[idx]) {
                 double elapsedMs = (double)(currentTime - g_sendWindow.send_time[idx]) * 1000.0 / CLOCKS_PER_SEC;
                 if (elapsedMs > SACK_TIMEOUT_MS) {
+                    // ===== RENO 拥塞控制：超时处理 =====
+                    if (!hasTimeout) {
+                        // 第一个超时包触发 RENO 超时处理
+                        g_sendWindow.handleTimeout();
+                        hasTimeout = true;
+                    }
+                    
                     // 超时重传该包
                     std::cout << "[Timeout Retransmit] seq=" << seq << ", elapsed " << (int)elapsedMs << "ms" << std::endl;
                     
@@ -171,6 +215,9 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
     }
     
     std::cout << "[Pipeline Send] Data transmission completed, sent " << totalPackets << " packets" << std::endl;
+    std::cout << "[RENO] Final state: cwnd=" << g_sendWindow.cwnd 
+              << ", ssthresh=" << g_sendWindow.ssthresh 
+              << ", phase=" << getRenoPhaseName(g_sendWindow.reno_phase) << std::endl;
     return true;
 }
 
@@ -458,6 +505,7 @@ int main() {
     
     std::cout << "\n===== Testing Pipeline Send (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
     std::cout << "Preparing to send 6 separate packets for pipeline testing" << std::endl;
+    std::cout << "[RENO] Testing RENO congestion control algorithm" << std::endl;
     
     // 逐包发送，每个包独立发送以测试流水线机制
     // 初始化发送窗口
@@ -467,7 +515,10 @@ int main() {
     int sentPackets = 0;    // 已完成发送（已确认）的包数
     int nextPacketToSend = 0;  // 下一个要发送的包索引
     
-    std::cout << "\n[Pipeline Send] Starting to send " << totalPackets << " packets, window size=" << FIXED_WINDOW_SIZE << std::endl;
+    std::cout << "\n[Pipeline Send] Starting to send " << totalPackets << " packets" << std::endl;
+    std::cout << "[RENO] Initial state: cwnd=" << g_sendWindow.cwnd 
+              << ", ssthresh=" << g_sendWindow.ssthresh 
+              << ", phase=" << getRenoPhaseName(g_sendWindow.reno_phase) << std::endl;
     
     // 设置非阻塞接收超时（用于接收ACK）
     int timeout = 100;  // 100ms短超时，用于轮询
@@ -511,13 +562,14 @@ int main() {
             std::cout << "[Send] Data packet seq=" << g_sendWindow.next_seq 
                      << ", length=" << packetDataLen 
                      << ", window[" << g_sendWindow.base << "," 
-                     << (g_sendWindow.base + FIXED_WINDOW_SIZE - 1) << "]" << std::endl;
+                     << (g_sendWindow.base + g_sendWindow.getEffectiveWindow() - 1) << "]"
+                     << ", cwnd=" << g_sendWindow.cwnd << std::endl;
             
             nextPacketToSend++;
             g_sendWindow.next_seq++;
         }
         
-        // ===== 步骤2：接收ACK/SACK并处理 =====
+        // ===== 步骤2：接收ACK/SACK并处理（整合 RENO 拥塞控制） =====
         char recvBuffer[MAX_PACKET_SIZE];
         sockaddr_in fromAddr;
         int fromAddrLen = sizeof(fromAddr);
@@ -531,6 +583,9 @@ int main() {
                 // 检查是否为ACK包
                 if (ackPacket.header.flag & FLAG_ACK) {
                     std::cout << "[Receive] ACK packet ack=" << ackPacket.header.ack;
+                    
+                    // ===== RENO 拥塞控制：处理 ACK =====
+                    bool isNewACK = g_sendWindow.handleNewACK(ackPacket.header.ack);
                     
                     // 检查是否带有SACK标志
                     if (ackPacket.header.flag & FLAG_SACK) {
@@ -575,18 +630,54 @@ int main() {
                         g_sendWindow.base++;
                     }
                     std::cout << "[Window Slide] base -> " << g_sendWindow.base << std::endl;
+                    
+                    // ===== RENO 快速重传处理 =====
+                    // 如果检测到快速重传（3个重复ACK），立即重传丢失的包
+                    if (g_sendWindow.dup_ack_count == DUP_ACK_THRESHOLD && 
+                        g_sendWindow.reno_phase == FAST_RECOVERY) {
+                        // 重传丢失的包（last_ack位置的包）
+                        uint32_t lostSeq = g_sendWindow.last_ack;
+                        if (lostSeq >= g_sendWindow.base && lostSeq < g_sendWindow.next_seq) {
+                            int lostIdx = g_sendWindow.getIndex(lostSeq);
+                            
+                            std::cout << "[RENO] Fast Retransmit: retransmitting seq=" << lostSeq << std::endl;
+                            
+                            Packet retxPacket;
+                            retxPacket.header.seq = lostSeq;
+                            retxPacket.header.ack = 0;
+                            retxPacket.header.flag = FLAG_ACK;
+                            retxPacket.header.win = FIXED_WINDOW_SIZE;
+                            retxPacket.setData(g_sendWindow.data_buf[lostIdx], g_sendWindow.data_len[lostIdx]);
+                            
+                            char sendBuffer[MAX_PACKET_SIZE];
+                            retxPacket.serialize(sendBuffer);
+                            sendto(clientSocket, sendBuffer, retxPacket.getTotalLen(), 0,
+                                  (sockaddr*)&serverAddr, sizeof(serverAddr));
+                            
+                            g_sendWindow.send_time[lostIdx] = clock();  // 更新发送时间
+                        }
+                    }
                 }
             }
         }
         
-        // ===== 步骤3：检查超时并重传（选择性重传） =====
+        // ===== 步骤3：检查超时并重传（选择性重传，整合 RENO 超时处理） =====
         clock_t currentTime = clock();
+        bool hasTimeout = false;  // 标记是否发生超时
+        
         for (uint32_t seq = g_sendWindow.base; seq < g_sendWindow.next_seq; seq++) {
             int idx = g_sendWindow.getIndex(seq);
             // 检查是否已发送但未确认且超时
             if (g_sendWindow.is_sent[idx] && !g_sendWindow.is_ack[idx]) {
                 double elapsedMs = (double)(currentTime - g_sendWindow.send_time[idx]) * 1000.0 / CLOCKS_PER_SEC;
                 if (elapsedMs > SACK_TIMEOUT_MS) {
+                    // ===== RENO 拥塞控制：超时处理 =====
+                    if (!hasTimeout) {
+                        // 第一个超时包触发 RENO 超时处理
+                        g_sendWindow.handleTimeout();
+                        hasTimeout = true;
+                    }
+                    
                     // 超时重传该包
                     std::cout << "[Timeout Retransmit] seq=" << seq << ", elapsed " << (int)elapsedMs << "ms" << std::endl;
                     
@@ -609,6 +700,9 @@ int main() {
     }
     
     std::cout << "[Pipeline Send] Data transmission completed, sent " << totalPackets << " packets" << std::endl;
+    std::cout << "[RENO] Final state: cwnd=" << g_sendWindow.cwnd 
+              << ", ssthresh=" << g_sendWindow.ssthresh 
+              << ", phase=" << getRenoPhaseName(g_sendWindow.reno_phase) << std::endl;
     
     // 更新序列号
     clientSeq = g_sendWindow.next_seq;
