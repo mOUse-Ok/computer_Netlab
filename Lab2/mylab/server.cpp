@@ -14,7 +14,7 @@ RecvWindow g_recvWindow;
 
 // ===== 模拟丢包标志 =====
 // 描述：用于测试SACK功能，设置为true时会丢弃特定序列号的包
-bool g_simulateLoss = true;
+bool g_simulateLoss = false;
 uint32_t g_lossSeq;  // 要丢弃的序列号
 
 // ===== 发送ACK/SACK响应 =====
