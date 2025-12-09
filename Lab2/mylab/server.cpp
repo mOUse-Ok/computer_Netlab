@@ -14,7 +14,8 @@ RecvWindow g_recvWindow;
 
 // ===== 模拟丢包标志 =====
 // 描述：用于测试SACK功能，设置为true时会丢弃特定序列号的包
-bool g_simulateLoss = false;
+// 说明：默认开启一次性丢包用于触发客户端的快速重传测试
+bool g_simulateLoss = true;
 uint32_t g_lossSeq;  // 要丢弃的序列号
 
 // ===== 发送ACK/SACK响应 =====
@@ -483,8 +484,7 @@ int main() {
         while (connectionActive) {
             // 接收客户端消息
             int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                         (sockaddr*)&clientAddr, &clientAddrLen);
-            
+                                         (sockaddr*)&clientAddr, &clientAddrLen);  
             if (bytesReceived == SOCKET_ERROR) {
                 if (WSAGetLastError() == WSAETIMEDOUT) {
                     std::cout << "[Timeout] Connection idle timeout, client may have disconnected" << std::endl;
