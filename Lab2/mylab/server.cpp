@@ -1,12 +1,11 @@
 #include <iostream>
 #include <winsock2.h>  // Windows Socket API头文件
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
-#include "protocol.h"  // 引入自定义协议头文件
+#include "server.h"    // 引入服务端头文件（包含config.h和protocol.h）
 
 #pragma comment(lib, "ws2_32.lib")  // 链接WS2_32.lib库
 
-#define PORT 8888  // 服务端监听端口
-#define BUFFER_SIZE 1024  // 缓冲区大小
+// 注意：PORT、BUFFER_SIZE等常量已在config.h中定义
 
 // ===== 全局接收窗口 =====
 // 描述：用于管理流水线接收的滑动窗口状态

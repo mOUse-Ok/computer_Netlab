@@ -2,14 +2,12 @@
 #include <cstdio>
 #include <winsock2.h>  // Windows Socket API头文件
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
-#include "protocol.h"  // 引入自定义协议头文件
+#include "client.h"    // 引入客户端头文件（包含config.h和protocol.h）
 
 
 #pragma comment(lib, "ws2_32.lib")  // 链接WS2_32.lib库
 
-#define SERVER_PORT 8888  // 服务端端口
-#define SERVER_IP "127.0.0.1"  // 服务端IP地址，这里使用本地回环地址
-#define BUFFER_SIZE 1024  // 缓冲区大小
+// 注意：SERVER_PORT、SERVER_IP、BUFFER_SIZE等常量已在config.h中定义
 
 // ===== 全局发送窗口 =====
 // 描述：用于管理流水线发送的滑动窗口状态

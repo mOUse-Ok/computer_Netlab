@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <ctime>
 #include <cstring>
+#include "config.h"  // 引入配置文件，所有可配置参数集中在config.h中管理
 
 // ===== 连接状态枚举 =====
 // 描述：用于跟踪连接的当前状态，模拟TCP状态机
@@ -34,31 +35,33 @@ enum RenoPhase {
 #define FLAG_FIN  0x04  // 结束标志（0000 0100）：用于关闭连接
 #define FLAG_SACK 0x08  // 选择确认标志（0000 1000）：用于选择确认功能
 
-// ===== 协议常量 =====
-// 协议头大小：seq(4) + ack(4) + flag(1) + win(2) + checksum(2) + len(2) + 保留(5) = 20字节
-#define HEADER_SIZE 20            // 协议头大小：20字节（便于对齐）
-#define MAX_PACKET_SIZE 1024      // 最大数据包大小（字节）
-#define MAX_DATA_SIZE (MAX_PACKET_SIZE - HEADER_SIZE)  // 最大数据负载大小
-#define DEFAULT_WINDOW_SIZE 4     // 默认窗口大小（单位：数据包数量，后续可配置）
-#define TIMEOUT_MS 3000           // 超时时间：3秒
-#define MAX_RETRIES 3             // 最大重传次数
-#define TIME_WAIT_MS 4000         // TIME_WAIT状态等待时间（2*MSL，这里设为4秒）
-#define HEARTBEAT_INTERVAL_MS 1000  // 心跳间隔：1秒
-#define CONNECTION_TIMEOUT_MS 5000  // 连接超时：5秒无响应则认为断开
-
-// ===== RENO 拥塞控制相关常量 =====
-// 描述：用于实现 TCP RENO 拥塞控制算法
-#define INITIAL_CWND 1                // 初始拥塞窗口大小（单位：包数）
-#define INITIAL_SSTHRESH 32           // 初始慢启动阈值（单位：包数）
-#define MIN_SSTHRESH 2                // 最小慢启动阈值（单位：包数）
-#define DUP_ACK_THRESHOLD 3           // 触发快速重传的重复 ACK 阈值
-
-// ===== 流水线传输与选择确认（SACK）相关常量 =====
-// 描述：用于流水线传输、固定窗口流量控制和选择确认功能
-#define FIXED_WINDOW_SIZE 4       // 固定窗口大小（作业要求：发送窗口 = 接收窗口）
-#define MSS 1024                  // 最大报文段大小（Maximum Segment Size）
-#define SACK_TIMEOUT_MS 500       // SACK超时重传时间：500毫秒（便于测试）
-#define MAX_SACK_BLOCKS 4         // SACK最大块数量（用于携带非连续已接收序列号）
+// ===== 协议常量说明 =====
+// 注意：以下常量已移动到 config.h 中进行统一管理，便于调试和测试
+// 
+// 协议基础参数（config.h）：
+//   HEADER_SIZE         - 协议头大小：20字节
+//   MAX_PACKET_SIZE     - 最大数据包大小
+//   MAX_DATA_SIZE       - 最大数据负载大小
+//   DEFAULT_WINDOW_SIZE - 默认窗口大小
+// 
+// 超时与重传参数（config.h）：
+//   TIMEOUT_MS          - 连接超时时间
+//   MAX_RETRIES         - 最大重传次数
+//   TIME_WAIT_MS        - TIME_WAIT等待时间
+//   HEARTBEAT_INTERVAL_MS - 心跳间隔
+//   CONNECTION_TIMEOUT_MS - 连接空闲超时
+//   SACK_TIMEOUT_MS     - SACK超时重传时间
+// 
+// RENO拥塞控制参数（config.h）：
+//   INITIAL_CWND        - 初始拥塞窗口
+//   INITIAL_SSTHRESH    - 初始慢启动阈值
+//   MIN_SSTHRESH        - 最小慢启动阈值
+//   DUP_ACK_THRESHOLD   - 重复ACK阈值
+// 
+// 滑动窗口参数（config.h）：
+//   FIXED_WINDOW_SIZE   - 固定窗口大小
+//   MSS                 - 最大报文段大小
+//   MAX_SACK_BLOCKS     - 最大SACK块数量
 
 // ===== 发送端窗口状态结构体 =====
 // 描述：管理发送端滑动窗口，跟踪已发送和已确认的数据包
