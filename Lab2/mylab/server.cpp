@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <winsock2.h>  // Windows Socket API头文件
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
 #include "server.h"    // 引入服务端头文件（包含config.h和protocol.h）
@@ -10,12 +11,6 @@
 // ===== 全局接收窗口 =====
 // 描述：用于管理流水线接收的滑动窗口状态
 RecvWindow g_recvWindow;
-
-// ===== 模拟丢包标志 =====
-// 描述：用于测试SACK功能，设置为true时会丢弃特定序列号的包
-// 说明：默认开启一次性丢包用于触发客户端的快速重传测试
-bool g_simulateLoss = true;
-uint32_t g_lossSeq;  // 要丢弃的序列号
 
 // ===== 发送ACK/SACK响应 =====
 // 描述：发送确认包，支持累积确认和选择确认
@@ -138,13 +133,6 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
         
         uint32_t recvSeq = recvPacket.header.seq;
         
-        // ===== 模拟丢包（用于测试SACK） =====
-        if (g_simulateLoss && recvSeq == g_lossSeq) {
-            std::cout << "[Simulate Loss] Discard seq=" << recvSeq << " data packet" << std::endl;
-            g_simulateLoss = false;  // 只丢弃一次
-            continue;
-        }
-        
         // 检查序列号是否在窗口范围内
         if (g_recvWindow.inWindow(recvSeq)) {
             int idx = g_recvWindow.getIndex(recvSeq);
@@ -222,21 +210,35 @@ bool acceptConnection(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t& cl
     char recvBuffer[MAX_PACKET_SIZE];
     int clientAddrLen = sizeof(clientAddr);
     
-    int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                 (sockaddr*)&clientAddr, &clientAddrLen);
-    
-    if (bytesReceived == SOCKET_ERROR) {
-        std::cerr << "[Error] Failed to receive SYN packet: " << WSAGetLastError() << std::endl;
-        return false;
-    }
-    
     Packet recvPacket;
-    if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
-        std::cout << "[Error] Packet checksum failed" << std::endl;
-        return false;
+    
+    // 循环等待有效的SYN包
+    while (true) {
+        clientAddrLen = sizeof(clientAddr);  // 每次recvfrom前重置长度
+        int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
+                                     (sockaddr*)&clientAddr, &clientAddrLen);
+        
+        if (bytesReceived == SOCKET_ERROR) {
+            std::cerr << "[Error] Failed to receive SYN packet: " << WSAGetLastError() << std::endl;
+            return false;
+        }
+        
+        if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
+            //std::cout << "[Warning] Packet checksum failed, continue waiting for valid SYN..." << std::endl;
+            continue;  // 继续等待有效的SYN包
+        }
+        
+        // 检查是否为SYN包
+        if (recvPacket.header.flag & FLAG_SYN) {
+            break;  // 收到有效的SYN包，退出循环
+        } else {
+            std::cout << "[Warning] Received non-SYN packet (flag=" << (int)recvPacket.header.flag 
+                     << "), continue waiting..." << std::endl;
+            continue;  // 不是SYN包，继续等待
+        }
     }
     
-    // 检查是否为SYN包
+    // 收到有效的SYN包
     if (recvPacket.header.flag & FLAG_SYN) {
         clientSeq = recvPacket.header.seq;
         std::cout << "[Received] SYN packet (seq=" << clientSeq << ") from " 
@@ -273,7 +275,7 @@ bool acceptConnection(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t& cl
         int timeout = TIMEOUT_MS;
         setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
         
-        bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
+        int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
                                 (sockaddr*)&clientAddr, &clientAddrLen);
         
         if (bytesReceived == SOCKET_ERROR) {
@@ -395,6 +397,35 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
 }
 
 int main() {
+    // 输出重定向：同时输出到终端和文件
+    std::ofstream logFile("server.txt");
+    std::streambuf* coutBuf = std::cout.rdbuf();
+    std::streambuf* cerrBuf = std::cerr.rdbuf();
+    
+    // 创建一个同时输出到终端和文件的流缓冲
+    class TeeStreamBuf : public std::streambuf {
+    public:
+        TeeStreamBuf(std::streambuf* sb1, std::streambuf* sb2) : sb1(sb1), sb2(sb2) {}
+    protected:
+        virtual int overflow(int c) override {
+            if (c == EOF) return !EOF;
+            if (sb1->sputc(c) == EOF || sb2->sputc(c) == EOF) return EOF;
+            return c;
+        }
+        virtual int sync() override {
+            if (sb1->pubsync() || sb2->pubsync()) return -1;
+            return 0;
+        }
+    private:
+        std::streambuf* sb1;
+        std::streambuf* sb2;
+    };
+    
+    TeeStreamBuf teeBuf(coutBuf, logFile.rdbuf());
+    TeeStreamBuf teeErrBuf(cerrBuf, logFile.rdbuf());
+    std::cout.rdbuf(&teeBuf);
+    std::cerr.rdbuf(&teeErrBuf);
+
     // 1. 初始化Winsock库
     WSADATA wsaData;
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);  // 请求版本2.2的Winsock
@@ -448,71 +479,43 @@ int main() {
 
     // 6. 连接已建立，使用流水线接收数据（支持SACK）
     std::cout << "\n===== Pipeline Receive Mode (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
+    std::cout << "[Server] Ready to receive file transfers from client..." << std::endl;
     
-    // 丢包模拟
-     g_lossSeq = clientSeq + 2;  // 丢弃第2个包
-    
-    // 使用流水线方式接收数据
+    // 循环接收文件传输
     int clientAddrLen = sizeof(clientAddr);
-    bool finReceived = false;
-    uint32_t finSeq = 0;
-    int receivedLen = pipelineRecv(serverSocket, clientAddr, clientAddrLen, clientSeq, serverSeq, finReceived, finSeq);
+    bool connectionActive = true;
+    int fileCount = 0;  // 已接收文件计数
     
-    if (receivedLen > 0) {
-        std::cout << "\n[Summary] Successfully received " << receivedLen << " bytes of data" << std::endl;
-    } else if (receivedLen < 0) {
-        std::cerr << "[Error] Data reception failed" << std::endl;
-    }
-    
-    // 如果收到了FIN包，直接处理四次挥手
-    if (finReceived) {
-        clientSeq = finSeq;
-        if (handleClose(serverSocket, clientAddr, clientSeq, serverSeq)) {
-            std::cout << "[Success] Connection closed successfully" << std::endl;
+    while (connectionActive) {
+        bool finReceived = false;
+        uint32_t finSeq = 0;
+        
+        // 使用流水线方式接收数据
+        int receivedLen = pipelineRecv(serverSocket, clientAddr, clientAddrLen, clientSeq, serverSeq, finReceived, finSeq);
+        
+        if (receivedLen > 0) {
+            fileCount++;
+            //std::cout << "\n[Summary] File #" << fileCount << " received, " << receivedLen << " bytes" << std::endl;
+            // 更新序列号，准备接收下一个文件
+            clientSeq = g_recvWindow.base;
+        } else if (receivedLen == 0 && !finReceived) {
+            // 没有收到数据，可能是超时
+            std::cout << "[Info] No data received, waiting for next transfer..." << std::endl;
         }
-    } else {
-        // 等待客户端关闭连接或超时
-        ConnectionState state = ESTABLISHED;
-        char recvBuffer[MAX_PACKET_SIZE];
         
-        // 设置非阻塞接收超时
-        int timeout = 10000;  // 10秒超时
-        setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-        
-        bool connectionActive = true;
-        while (connectionActive) {
-            // 接收客户端消息
-            int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                         (sockaddr*)&clientAddr, &clientAddrLen);  
-            if (bytesReceived == SOCKET_ERROR) {
-                if (WSAGetLastError() == WSAETIMEDOUT) {
-                    std::cout << "[Timeout] Connection idle timeout, client may have disconnected" << std::endl;
-                    break;
-                }
-                std::cerr << "[Error] Receive failed: " << WSAGetLastError() << std::endl;
-                continue;
+        // 如果收到了FIN包，处理四次挥手并退出循环
+        if (finReceived) {
+            std::cout << "\n[Info] Received FIN from client, closing connection..." << std::endl;
+            clientSeq = finSeq;
+            if (handleClose(serverSocket, clientAddr, clientSeq, serverSeq)) {
+                std::cout << "[Success] Connection closed successfully" << std::endl;
             }
-            
-            // 解析接收到的包
-            Packet recvPacket;
-            if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
-                std::cout << "[Error] Packet checksum failed, discarded" << std::endl;
-                continue;
-            }
-            
-            // 检查是否为FIN包（客户端请求关闭）
-            if (recvPacket.header.flag & FLAG_FIN) {
-                std::cout << "[Receive] FIN packet seq=" << recvPacket.header.seq << std::endl;
-                clientSeq = recvPacket.header.seq;
-                
-                // 处理四次挥手
-                if (handleClose(serverSocket, clientAddr, clientSeq, serverSeq)) {
-                    connectionActive = false;
-                }
-                break;
-            }
+            connectionActive = false;
+            break;
         }
     }
+    
+    //std::cout << "\n[Summary] Total files received: " << fileCount << std::endl;
 
     // 7. 清理资源
     closesocket(serverSocket);

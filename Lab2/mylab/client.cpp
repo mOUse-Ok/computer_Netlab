@@ -1,11 +1,103 @@
 #include <iostream>
 #include <cstdio>
+#include <fstream>
+#include <string>
+#include <vector>
 #include <winsock2.h>  // Windows Socket API头文件
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
+#include <windows.h>   // Windows API用于目录操作
 #include "client.h"    // 引入客户端头文件（包含config.h和protocol.h）
 
 
 #pragma comment(lib, "ws2_32.lib")  // 链接WS2_32.lib库
+
+// ===== 测试文件目录路径 =====
+const char* TESTFILE_DIR = "testfile";
+
+// ===== 获取testfile目录下的所有文件名 =====
+std::vector<std::string> getTestFiles() {
+    std::vector<std::string> files;
+    WIN32_FIND_DATAA findData;
+    std::string searchPath = std::string(TESTFILE_DIR) + "\\*";
+    
+    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &findData);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            // 跳过目录（包括. 和 ..）
+            if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                files.push_back(findData.cFileName);
+            }
+        } while (FindNextFileA(hFind, &findData));
+        FindClose(hFind);
+    }
+    return files;
+}
+
+// ===== 打印testfile目录下的文件列表 =====
+void printTestFiles(const std::vector<std::string>& files) {
+    std::cout << "\n========== testfile Directory Files ==========" << std::endl;
+    if (files.empty()) {
+        std::cout << "  (No files found)" << std::endl;
+    } else {
+        for (size_t i = 0; i < files.size(); i++) {
+            std::cout << "  [" << (i + 1) << "] " << files[i] << std::endl;
+        }
+    }
+    std::cout << "===============================================" << std::endl;
+    std::cout << "Commands:" << std::endl;
+    std::cout << "  - Enter filename to transfer that file" << std::endl;
+    std::cout << "  - Enter 'test all' to transfer all files" << std::endl;
+    std::cout << "  - Enter './quit' to disconnect and exit" << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << "Input: ";
+}
+
+// ===== 读取文件内容 =====
+bool readFileContent(const std::string& filename, std::vector<char>& content) {
+    std::string filepath = std::string(TESTFILE_DIR) + "\\" + filename;
+    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
+    
+    if (!file.is_open()) {
+        std::cerr << "[Error] Cannot open file: " << filepath << std::endl;
+        return false;
+    }
+    
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    
+    content.resize(size);
+    if (!file.read(content.data(), size)) {
+        std::cerr << "[Error] Failed to read file: " << filepath << std::endl;
+        return false;
+    }
+    
+    std::cout << "[Info] Read file '" << filename << "', size: " << size << " bytes" << std::endl;
+    return true;
+}
+
+// ===== 传输单个文件 =====
+bool transferFile(SOCKET clientSocket, sockaddr_in& serverAddr, 
+                  const std::string& filename, uint32_t& clientSeq) {
+    std::vector<char> content;
+    if (!readFileContent(filename, content)) {
+        return false;
+    }
+    
+    std::cout << "\n[Transfer] Starting transfer of '" << filename << "'..." << std::endl;
+    
+    // 使用pipelineSend发送文件内容
+    bool result = pipelineSend(clientSocket, serverAddr, content.data(), content.size(), clientSeq);
+    
+    if (result) {
+        std::cout << "[Transfer] File '" << filename << "' transferred successfully!" << std::endl;
+        // 更新序列号
+        clientSeq = g_sendWindow.next_seq;
+    } else {
+        std::cerr << "[Transfer] Failed to transfer file '" << filename << "'" << std::endl;
+    }
+    
+    return result;
+}
 
 // 注意：SERVER_PORT、SERVER_IP、BUFFER_SIZE等常量已在config.h中定义
 
@@ -440,6 +532,35 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
 }
 
 int main() {
+    // 输出重定向：同时输出到终端和文件
+    std::ofstream logFile("client.txt");
+    std::streambuf* coutBuf = std::cout.rdbuf();
+    std::streambuf* cerrBuf = std::cerr.rdbuf();
+    
+    // 创建一个同时输出到终端和文件的流缓冲
+    class TeeStreamBuf : public std::streambuf {
+    public:
+        TeeStreamBuf(std::streambuf* sb1, std::streambuf* sb2) : sb1(sb1), sb2(sb2) {}
+    protected:
+        virtual int overflow(int c) override {
+            if (c == EOF) return !EOF;
+            if (sb1->sputc(c) == EOF || sb2->sputc(c) == EOF) return EOF;
+            return c;
+        }
+        virtual int sync() override {
+            if (sb1->pubsync() || sb2->pubsync()) return -1;
+            return 0;
+        }
+    private:
+        std::streambuf* sb1;
+        std::streambuf* sb2;
+    };
+    
+    TeeStreamBuf teeBuf(coutBuf, logFile.rdbuf());
+    TeeStreamBuf teeErrBuf(cerrBuf, logFile.rdbuf());
+    std::cout.rdbuf(&teeBuf);
+    std::cerr.rdbuf(&teeErrBuf);
+
     // 1. 初始化Winsock库
     WSADATA wsaData;
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);  // 请求版本2.2的Winsock
@@ -478,273 +599,106 @@ int main() {
         return 1;
     }
 
-    // 5. 连接已建立，使用流水线发送应用数据
-    // 创建测试数据：每个消息单独作为一个包发送，以测试流水线和SACK
-    // 为了让每个消息成为独立的包，我们需要将MAX_DATA_SIZE设置得较小，
-    // 或者发送更多更大的数据。这里我们构造6个大数据块，每个块约200字节，
-    // 模拟需要发送6个数据包的场景
+    // 5. 连接已建立，进入文件传输模式
+    std::cout << "\n===== File Transfer Mode (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
+    std::cout << "[RENO] RENO congestion control enabled" << std::endl;
     
-    // 创建6个测试数据包，每个约250字节
-    char testPackets[6][300];
-    int packetLens[6];
+    bool running = true;
+    int transferCount = 0;  // 传输计数器
     
-    for (int i = 0; i < 6; i++) {
-        // 填充每个包的数据
-        snprintf(testPackets[i], sizeof(testPackets[i]), 
-                "=== Packet %d ===\n"
-                "This is test packet number %d for pipeline transmission testing.\n"
-                "Testing SACK (Selective Acknowledgment) and fixed window flow control.\n"
-                "Window size = %d, this packet should be sent and acknowledged correctly.\n"
-                "Padding data to make packet larger: ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
-                "End of packet %d.\n",
-                i + 1, i + 1, FIXED_WINDOW_SIZE, i + 1);
-        packetLens[i] = strlen(testPackets[i]);
-    }
-    
-    std::cout << "\n===== Testing Pipeline Send (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
-    std::cout << "Preparing to send 6 separate packets for pipeline testing" << std::endl;
-    std::cout << "[RENO] Testing RENO congestion control algorithm" << std::endl;
-    
-    // 逐包发送，每个包独立发送以测试流水线机制
-    // 初始化发送窗口
-    g_sendWindow.reset(clientSeq);
-    
-    int totalPackets = 6;
-    int sentPackets = 0;    // 已完成发送（已确认）的包数
-    int nextPacketToSend = 0;  // 下一个要发送的包索引
-    
-    std::cout << "\n[Pipeline Send] Starting to send " << totalPackets << " packets" << std::endl;
-    std::cout << "[RENO] Initial state: cwnd=" << g_sendWindow.cwnd 
-              << ", ssthresh=" << g_sendWindow.ssthresh 
-              << ", phase=" << getRenoPhaseName(g_sendWindow.reno_phase) << std::endl;
-    
-    // 设置非阻塞接收超时（用于接收ACK）
-    int timeout = 100;  // 100ms短超时，用于轮询
-    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-    
-    while (sentPackets < totalPackets) {
-        // ===== 步骤1：发送窗口内所有可发送的包（流水线发送） =====
-        while (g_sendWindow.canSend() && nextPacketToSend < totalPackets) {
-            int idx = g_sendWindow.getIndex(g_sendWindow.next_seq);
-            
-            // 获取当前要发送的数据
-            int packetDataLen = packetLens[nextPacketToSend];
-            
-            // 将数据复制到发送窗口缓冲区（用于可能的重传）
-            memcpy(g_sendWindow.data_buf[idx], testPackets[nextPacketToSend], packetDataLen);
-            g_sendWindow.data_len[idx] = packetDataLen;
-            g_sendWindow.is_sent[idx] = 1;
-            g_sendWindow.is_ack[idx] = 0;
-            g_sendWindow.send_time[idx] = clock();  // 记录发送时间
-            
-            // 构造并发送数据包
-            Packet dataPacket;
-            dataPacket.header.seq = g_sendWindow.next_seq;
-            dataPacket.header.ack = 0;
-            dataPacket.header.flag = FLAG_ACK;  // 数据包带ACK标志
-            dataPacket.header.win = FIXED_WINDOW_SIZE;  // 携带窗口大小（流量控制）
-            dataPacket.setData(g_sendWindow.data_buf[idx], packetDataLen);
-            
-            char sendBuffer[MAX_PACKET_SIZE];
-            dataPacket.serialize(sendBuffer);
-            int bytesSent = sendto(clientSocket, sendBuffer, dataPacket.getTotalLen(), 0,
-                                  (sockaddr*)&serverAddr, sizeof(serverAddr));
-            
-            if (bytesSent == SOCKET_ERROR) {
-                std::cerr << "[Error] Failed to send data packet: " << WSAGetLastError() << std::endl;
-                closesocket(clientSocket);
-                WSACleanup();
-                return 1;
-            }
-            
-            std::cout << "[Send] Data packet seq=" << g_sendWindow.next_seq 
-                     << ", length=" << packetDataLen 
-                     << ", window[" << g_sendWindow.base << "," 
-                     << (g_sendWindow.base + g_sendWindow.getEffectiveWindow() - 1) << "]"
-                     << ", cwnd=" << g_sendWindow.cwnd << std::endl;
-            
-            nextPacketToSend++;
-            g_sendWindow.next_seq++;
-        }
+    while (running) {
+        // 获取testfile目录下的文件列表
+        std::vector<std::string> files = getTestFiles();
         
-        // ===== 步骤2：接收ACK/SACK并处理（整合 RENO 拥塞控制） =====
-        char recvBuffer[MAX_PACKET_SIZE];
-        sockaddr_in fromAddr;
-        int fromAddrLen = sizeof(fromAddr);
+        // 打印文件列表
+        printTestFiles(files);
         
-        int bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                     (sockaddr*)&fromAddr, &fromAddrLen);
+        // 读取用户输入
+        std::string input;
+        std::getline(std::cin, input);
         
-        if (bytesReceived > 0) {
-            Packet ackPacket;
-            if (ackPacket.deserialize(recvBuffer, bytesReceived)) {
-                // 检查是否为ACK包
-                if (ackPacket.header.flag & FLAG_ACK) {
-                    std::cout << "[Receive] ACK packet ack=" << ackPacket.header.ack;
-                    
-                    // ===== RENO 拥塞控制：处理 ACK =====
-                    bool isNewACK = g_sendWindow.handleNewACK(ackPacket.header.ack);
-                    
-                    // 检查是否带有SACK标志
-                    if (ackPacket.header.flag & FLAG_SACK) {
-                        // 解析SACK信息
-                        SACKInfo sackInfo;
-                        if (ackPacket.dataLen > 0 && 
-                            sackInfo.deserialize(ackPacket.data, ackPacket.dataLen)) {
-                            std::cout << ", SACK blocks=[";
-                            for (int i = 0; i < sackInfo.count; i++) {
-                                if (i > 0) std::cout << ",";
-                                std::cout << sackInfo.sack_blocks[i];
-                                // 标记SACK中的序列号为已确认
-                                if (sackInfo.sack_blocks[i] >= g_sendWindow.base &&
-                                    sackInfo.sack_blocks[i] < g_sendWindow.base + FIXED_WINDOW_SIZE) {
-                                    int sackIdx = g_sendWindow.getIndex(sackInfo.sack_blocks[i]);
-                                    g_sendWindow.is_ack[sackIdx] = 1;
-                                }
-                            }
-                            std::cout << "]";
-                        }
-                    }
-                    std::cout << std::endl;
-                    
-                    // 累积确认：标记所有序列号 < ack 的包为已确认，并滑动窗口
-                    uint32_t ackNum = ackPacket.header.ack;
-                    while (g_sendWindow.base < ackNum && g_sendWindow.base < g_sendWindow.next_seq) {
-                        int idx = g_sendWindow.getIndex(g_sendWindow.base);
-                        // 只要base向前移动，就表示一个包被确认
-                        // 注意：如果包之前被SACK标记过，is_ack已经是1，不重复计数
-                        if (!g_sendWindow.is_ack[idx]) {
-                            sentPackets++;
-                            std::cout << "[Confirmed] seq=" << g_sendWindow.base << ", sentPackets=" << sentPackets << "/" << totalPackets << std::endl;
-                        } else {
-                            // 被SACK过的包，现在被累积确认
-                            sentPackets++;
-                            std::cout << "[SACK->Confirmed] seq=" << g_sendWindow.base << ", sentPackets=" << sentPackets << "/" << totalPackets << std::endl;
-                        }
-                        // 清除当前位置状态并滑动窗口
-                        g_sendWindow.is_sent[idx] = 0;
-                        g_sendWindow.is_ack[idx] = 0;
-                        g_sendWindow.data_len[idx] = 0;
-                        g_sendWindow.base++;
-                    }
-                    std::cout << "[Window Slide] base -> " << g_sendWindow.base << std::endl;
-                    
-                    // ===== RENO 快速重传处理 =====
-                    // 如果检测到快速重传（3个重复ACK），立即重传丢失的包
-                    if (g_sendWindow.dup_ack_count == DUP_ACK_THRESHOLD && 
-                        g_sendWindow.reno_phase == FAST_RECOVERY) {
-                        // 重传丢失的包（last_ack位置的包）
-                        uint32_t lostSeq = g_sendWindow.last_ack;
-                        if (lostSeq >= g_sendWindow.base && lostSeq < g_sendWindow.next_seq) {
-                            int lostIdx = g_sendWindow.getIndex(lostSeq);
-                            
-                            std::cout << "[RENO] Fast Retransmit: retransmitting seq=" << lostSeq << std::endl;
-                            
-                            Packet retxPacket;
-                            retxPacket.header.seq = lostSeq;
-                            retxPacket.header.ack = 0;
-                            retxPacket.header.flag = FLAG_ACK;
-                            retxPacket.header.win = FIXED_WINDOW_SIZE;
-                            retxPacket.setData(g_sendWindow.data_buf[lostIdx], g_sendWindow.data_len[lostIdx]);
-                            
-                            char sendBuffer[MAX_PACKET_SIZE];
-                            retxPacket.serialize(sendBuffer);
-                            sendto(clientSocket, sendBuffer, retxPacket.getTotalLen(), 0,
-                                  (sockaddr*)&serverAddr, sizeof(serverAddr));
-                            
-                            g_sendWindow.send_time[lostIdx] = clock();  // 更新发送时间
-                        }
-                    }
-                }
-            }
-        }
-        
-        // ===== 步骤3：检查超时并重传（选择性重传，整合 RENO 超时处理） =====
-        clock_t currentTime = clock();
-        bool hasTimeout = false;  // 标记是否发生超时
-        
-        for (uint32_t seq = g_sendWindow.base; seq < g_sendWindow.next_seq; seq++) {
-            int idx = g_sendWindow.getIndex(seq);
-            // 检查是否已发送但未确认且超时
-            if (g_sendWindow.is_sent[idx] && !g_sendWindow.is_ack[idx]) {
-                double elapsedMs = (double)(currentTime - g_sendWindow.send_time[idx]) * 1000.0 / CLOCKS_PER_SEC;
-                if (elapsedMs > SACK_TIMEOUT_MS) {
-                    // ===== RENO 拥塞控制：超时处理 =====
-                    if (!hasTimeout) {
-                        // 第一个超时包触发 RENO 超时处理
-                        g_sendWindow.handleTimeout();
-                        hasTimeout = true;
-                    }
-                    
-                    // 超时重传该包
-                    std::cout << "[Timeout Retransmit] seq=" << seq << ", elapsed " << (int)elapsedMs << "ms" << std::endl;
-                    
-                    Packet retxPacket;
-                    retxPacket.header.seq = seq;
-                    retxPacket.header.ack = 0;
-                    retxPacket.header.flag = FLAG_ACK;
-                    retxPacket.header.win = FIXED_WINDOW_SIZE;
-                    retxPacket.setData(g_sendWindow.data_buf[idx], g_sendWindow.data_len[idx]);
-                    
-                    char sendBuffer[MAX_PACKET_SIZE];
-                    retxPacket.serialize(sendBuffer);
-                    sendto(clientSocket, sendBuffer, retxPacket.getTotalLen(), 0,
-                          (sockaddr*)&serverAddr, sizeof(serverAddr));
-                    
-                    g_sendWindow.send_time[idx] = clock();  // 重置发送时间
-                }
-            }
-        }
-    }
-    
-    std::cout << "[Pipeline Send] Data transmission completed, sent " << totalPackets << " packets" << std::endl;
-    std::cout << "[RENO] Final state: cwnd=" << g_sendWindow.cwnd 
-              << ", ssthresh=" << g_sendWindow.ssthresh 
-              << ", phase=" << getRenoPhaseName(g_sendWindow.reno_phase) << std::endl;
-    
-    // 更新序列号
-    clientSeq = g_sendWindow.next_seq;
-    
-    // 等待服务端处理完成
-    Sleep(1000);
-    
-    // 6. 接收服务端的确认响应
-    char finalRecvBuffer[MAX_PACKET_SIZE];
-    sockaddr_in finalFromAddr;
-    int finalFromAddrLen = sizeof(finalFromAddr);
-    
-    // 设置接收超时
-    timeout = 5000;  // 5秒超时
-    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-
-    std::cout << "\nWaiting for server's final confirmation..." << std::endl;
-    int finalBytesReceived = recvfrom(clientSocket, finalRecvBuffer, MAX_PACKET_SIZE, 0, 
-                                 (sockaddr*)&finalFromAddr, &finalFromAddrLen);
-    if (finalBytesReceived == SOCKET_ERROR) {
-        if (WSAGetLastError() == WSAETIMEDOUT) {
-            std::cout << "Receive timeout (server may have finished processing)" << std::endl;
+        // 去除首尾空格
+        size_t start = input.find_first_not_of(" \t");
+        size_t end = input.find_last_not_of(" \t");
+        if (start != std::string::npos && end != std::string::npos) {
+            input = input.substr(start, end - start + 1);
         } else {
-            std::cerr << "Receive failed: " << WSAGetLastError() << std::endl;
+            input.clear();
         }
-    } else {
-        Packet finalRecvPacket;
-        if (finalRecvPacket.deserialize(finalRecvBuffer, finalBytesReceived)) {
-            if (finalRecvPacket.dataLen > 0) {
-                finalRecvPacket.data[finalRecvPacket.dataLen] = '\0';
-                std::cout << "Received server response: " << finalRecvPacket.data << std::endl;
+        
+        // 检查用户输入
+        if (input.empty()) {
+            std::cout << "[Info] Empty input, please try again." << std::endl;
+            continue;
+        }
+        
+        // 处理退出命令
+        if (input == "./quit") {
+            std::cout << "\n[Info] Quit command received, disconnecting..." << std::endl;
+            running = false;
+            break;
+        }
+        
+        // 处理 "test all" 命令
+        if (input == "test all") {
+            if (files.empty()) {
+                std::cout << "[Warning] No files to transfer in testfile directory." << std::endl;
+                continue;
             }
-            serverSeq = finalRecvPacket.header.seq + 1;
-        } else {
-            std::cout << "Packet checksum failed" << std::endl;
+            
+            std::cout << "\n[Test All] Transferring all " << files.size() << " files..." << std::endl;
+            int successCount = 0;
+            
+            for (size_t i = 0; i < files.size(); i++) {
+                std::cout << "\n========== File " << (i + 1) << "/" << files.size() 
+                         << ": " << files[i] << " ==========" << std::endl;
+                
+                if (transferFile(clientSocket, serverAddr, files[i], clientSeq)) {
+                    successCount++;
+                    transferCount++;
+                }
+                
+                // 在文件之间稍作等待，让服务端处理完成
+                Sleep(500);
+            }
+            
+            std::cout << "\n[Test All] Completed: " << successCount << "/" << files.size() 
+                     << " files transferred successfully." << std::endl;
+            continue;
         }
+        
+        // 检查输入的文件名是否存在
+        bool found = false;
+        for (const auto& file : files) {
+            if (file == input) {
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            std::cout << "[Error] File '" << input << "' not found in testfile directory." << std::endl;
+            std::cout << "[Hint] Please enter an exact filename from the list above." << std::endl;
+            continue;
+        }
+        
+        // 传输指定文件
+        if (transferFile(clientSocket, serverAddr, input, clientSeq)) {
+            transferCount++;
+        }
+        
+        // 传输完成后稍作等待
+        Sleep(500);
     }
+    
+    std::cout << "\n[Summary] Total files transferred: " << transferCount << std::endl;
 
-    // 7. Perform four-way handshake to close connection
+    // 6. 执行四次挥手关闭连接
     if (!closeConnection(clientSocket, serverAddr, clientSeq, serverSeq)) {
         std::cerr << "Connection closure process encountered an exception" << std::endl;
     }
 
-    // 8. 清理资源
+    // 7. 清理资源
     closesocket(clientSocket);
     WSACleanup();
 
