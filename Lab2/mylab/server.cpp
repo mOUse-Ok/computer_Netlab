@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <cstdlib>     // rand(), srand()
+#include <ctime>       // time()
 #include <winsock2.h>  // Windows Socket API头文件
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
 #include "server.h"    // 引入服务端头文件（包含config.h和protocol.h）
@@ -11,6 +13,73 @@
 // ===== 全局接收窗口 =====
 // 描述：用于管理流水线接收的滑动窗口状态
 RecvWindow g_recvWindow;
+
+// ===== 模拟日志文件流 =====
+// 描述：用于记录丢包和延迟信息
+std::ofstream g_simulationLog;
+
+// ===== 初始化模拟日志 =====
+void initSimulationLog() {
+    g_simulationLog.open("simulation.txt", std::ios::out | std::ios::trunc);
+    if (g_simulationLog.is_open()) {
+        g_simulationLog << "========== 网络模拟日志 ==========" << std::endl;
+        g_simulationLog << "启动时间: " << time(nullptr) << std::endl;
+        g_simulationLog << "丢包模拟: " << (SIMULATE_LOSS_ENABLED ? "启用" : "禁用") << std::endl;
+        g_simulationLog << "丢包率: " << SIMULATE_LOSS_RATE << "%" << std::endl;
+        g_simulationLog << "延迟模拟: " << (SIMULATE_DELAY_ENABLED ? "启用" : "禁用") << std::endl;
+        g_simulationLog << "延迟时间: " << SIMULATE_DELAY_MS << "ms" << std::endl;
+        g_simulationLog << "===================================" << std::endl << std::endl;
+    }
+}
+
+// ===== 关闭模拟日志 =====
+void closeSimulationLog() {
+    if (g_simulationLog.is_open()) {
+        g_simulationLog << std::endl << "========== 模拟日志结束 ==========" << std::endl;
+        g_simulationLog.close();
+    }
+}
+
+// ===== 模拟丢包检查 =====
+// 描述：根据配置的丢包率决定是否丢弃当前数据包
+// 参数：recvSeq - 接收到的序列号
+// 返回值：true表示应该丢弃该包，false表示正常处理
+bool shouldDropPacket(uint32_t recvSeq) {
+    if (!SIMULATE_LOSS_ENABLED || SIMULATE_LOSS_RATE <= 0) {
+        return false;
+    }
+    
+    int randomValue = rand() % 100;
+    if (randomValue < SIMULATE_LOSS_RATE) {
+        // 记录丢包信息
+        std::cout << "[Simulation] DROPPED packet seq=" << recvSeq 
+                  << " (random=" << randomValue << ", threshold=" << SIMULATE_LOSS_RATE << ")" << std::endl;
+        if (g_simulationLog.is_open()) {
+            g_simulationLog << "[DROP] seq=" << recvSeq 
+                           << ", random=" << randomValue 
+                           << ", threshold=" << SIMULATE_LOSS_RATE << "%" << std::endl;
+        }
+        return true;
+    }
+    return false;
+}
+
+// ===== 模拟延迟 =====
+// 描述：根据配置的延迟时间进行延迟处理
+// 参数：recvSeq - 接收到的序列号
+void simulateDelay(uint32_t recvSeq) {
+    if (!SIMULATE_DELAY_ENABLED || SIMULATE_DELAY_MS <= 0) {
+        return;
+    }
+    
+    std::cout << "[Simulation] DELAY packet seq=" << recvSeq 
+              << " for " << SIMULATE_DELAY_MS << "ms" << std::endl;
+    if (g_simulationLog.is_open()) {
+        g_simulationLog << "[DELAY] seq=" << recvSeq 
+                       << ", delay=" << SIMULATE_DELAY_MS << "ms" << std::endl;
+    }
+    Sleep(SIMULATE_DELAY_MS);
+}
 
 // ===== 发送ACK/SACK响应 =====
 // 描述：发送确认包，支持累积确认和选择确认
@@ -132,6 +201,14 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
         }
         
         uint32_t recvSeq = recvPacket.header.seq;
+        
+        // ===== 模拟丢包 =====
+        if (shouldDropPacket(recvSeq)) {
+            continue;  // 丢弃该包，不做任何处理
+        }
+        
+        // ===== 模拟延迟 =====
+        simulateDelay(recvSeq);
         
         // 检查序列号是否在窗口范围内
         if (g_recvWindow.inWindow(recvSeq)) {
@@ -426,6 +503,20 @@ int main() {
     std::cout.rdbuf(&teeBuf);
     std::cerr.rdbuf(&teeErrBuf);
 
+    // 初始化随机数种子（用于模拟丢包）
+    srand(static_cast<unsigned int>(time(nullptr)));
+    
+    // 初始化模拟日志
+    initSimulationLog();
+    
+    // 输出模拟配置信息
+    std::cout << "\n===== Network Simulation Configuration =====" << std::endl;
+    std::cout << "Loss Simulation: " << (SIMULATE_LOSS_ENABLED ? "Enabled" : "Disabled") << std::endl;
+    std::cout << "Loss Rate: " << SIMULATE_LOSS_RATE << "%" << std::endl;
+    std::cout << "Delay Simulation: " << (SIMULATE_DELAY_ENABLED ? "Enabled" : "Disabled") << std::endl;
+    std::cout << "Delay Time: " << SIMULATE_DELAY_MS << "ms" << std::endl;
+    std::cout << "=============================================\n" << std::endl;
+
     // 1. 初始化Winsock库
     WSADATA wsaData;
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);  // 请求版本2.2的Winsock
@@ -518,6 +609,7 @@ int main() {
     //std::cout << "\n[Summary] Total files received: " << fileCount << std::endl;
 
     // 7. 清理资源
+    closeSimulationLog();  // 关闭模拟日志
     closesocket(serverSocket);
     WSACleanup();
 

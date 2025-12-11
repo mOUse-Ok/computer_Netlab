@@ -1,0 +1,267 @@
+========== 网络模拟日志 ==========
+启动时间: 1765471534
+丢包模拟: 启用
+丢包率: 10%
+延迟模拟: 启用
+延迟时间: 50ms
+===================================
+
+[DELAY] seq=1, delay=50ms
+[DELAY] seq=2, delay=50ms
+[DELAY] seq=3, delay=50ms
+[DELAY] seq=4, delay=50ms
+[DELAY] seq=5, delay=50ms
+[DELAY] seq=6, delay=50ms
+[DELAY] seq=7, delay=50ms
+[DELAY] seq=8, delay=50ms
+[DELAY] seq=9, delay=50ms
+[DELAY] seq=10, delay=50ms
+[DROP] seq=11, random=8, threshold=10%
+[DELAY] seq=12, delay=50ms
+[DELAY] seq=13, delay=50ms
+[DELAY] seq=14, delay=50ms
+[DELAY] seq=15, delay=50ms
+[DELAY] seq=16, delay=50ms
+[DELAY] seq=17, delay=50ms
+[DELAY] seq=18, delay=50ms
+[DROP] seq=11, random=3, threshold=10%
+[DELAY] seq=16, delay=50ms
+[DROP] seq=17, random=2, threshold=10%
+[DELAY] seq=18, delay=50ms
+[DELAY] seq=11, delay=50ms
+[DELAY] seq=19, delay=50ms
+[DELAY] seq=20, delay=50ms
+[DELAY] seq=21, delay=50ms
+[DELAY] seq=22, delay=50ms
+[DROP] seq=23, random=2, threshold=10%
+[DELAY] seq=24, delay=50ms
+[DELAY] seq=25, delay=50ms
+[DELAY] seq=23, delay=50ms
+[DELAY] seq=26, delay=50ms
+[DELAY] seq=27, delay=50ms
+[DELAY] seq=28, delay=50ms
+[DELAY] seq=29, delay=50ms
+[DROP] seq=30, random=2, threshold=10%
+[DELAY] seq=31, delay=50ms
+[DELAY] seq=32, delay=50ms
+[DELAY] seq=33, delay=50ms
+[DELAY] seq=30, delay=50ms
+[DELAY] seq=34, delay=50ms
+[DELAY] seq=35, delay=50ms
+[DELAY] seq=36, delay=50ms
+[DELAY] seq=37, delay=50ms
+[DELAY] seq=38, delay=50ms
+[DELAY] seq=39, delay=50ms
+[DELAY] seq=40, delay=50ms
+[DELAY] seq=41, delay=50ms
+[DELAY] seq=42, delay=50ms
+[DROP] seq=43, random=6, threshold=10%
+[DELAY] seq=44, delay=50ms
+[DELAY] seq=45, delay=50ms
+[DELAY] seq=46, delay=50ms
+[DELAY] seq=47, delay=50ms
+[DELAY] seq=43, delay=50ms
+[DELAY] seq=48, delay=50ms
+[DELAY] seq=49, delay=50ms
+[DELAY] seq=50, delay=50ms
+[DELAY] seq=51, delay=50ms
+[DELAY] seq=52, delay=50ms
+[DELAY] seq=53, delay=50ms
+[DELAY] seq=54, delay=50ms
+[DELAY] seq=55, delay=50ms
+[DELAY] seq=56, delay=50ms
+[DELAY] seq=57, delay=50ms
+[DELAY] seq=58, delay=50ms
+[DELAY] seq=59, delay=50ms
+[DELAY] seq=60, delay=50ms
+[DELAY] seq=61, delay=50ms
+[DELAY] seq=62, delay=50ms
+[DELAY] seq=63, delay=50ms
+[DELAY] seq=64, delay=50ms
+[DELAY] seq=65, delay=50ms
+[DELAY] seq=66, delay=50ms
+[DELAY] seq=67, delay=50ms
+[DELAY] seq=68, delay=50ms
+[DELAY] seq=69, delay=50ms
+[DELAY] seq=70, delay=50ms
+[DELAY] seq=71, delay=50ms
+[DELAY] seq=72, delay=50ms
+[DELAY] seq=73, delay=50ms
+[DELAY] seq=74, delay=50ms
+[DELAY] seq=75, delay=50ms
+[DELAY] seq=76, delay=50ms
+[DELAY] seq=77, delay=50ms
+[DELAY] seq=78, delay=50ms
+[DELAY] seq=79, delay=50ms
+[DELAY] seq=80, delay=50ms
+[DELAY] seq=81, delay=50ms
+[DROP] seq=82, random=1, threshold=10%
+[DELAY] seq=83, delay=50ms
+[DROP] seq=84, random=7, threshold=10%
+[DROP] seq=85, random=5, threshold=10%
+[DELAY] seq=86, delay=50ms
+[DELAY] seq=87, delay=50ms
+[DELAY] seq=88, delay=50ms
+[DELAY] seq=89, delay=50ms
+[DELAY] seq=82, delay=50ms
+[DELAY] seq=84, delay=50ms
+[DELAY] seq=85, delay=50ms
+[DELAY] seq=90, delay=50ms
+[DELAY] seq=91, delay=50ms
+[DROP] seq=92, random=1, threshold=10%
+[DELAY] seq=93, delay=50ms
+[DELAY] seq=94, delay=50ms
+[DELAY] seq=95, delay=50ms
+[DELAY] seq=92, delay=50ms
+[DELAY] seq=96, delay=50ms
+[DROP] seq=97, random=0, threshold=10%
+[DELAY] seq=98, delay=50ms
+[DELAY] seq=97, delay=50ms
+[DELAY] seq=99, delay=50ms
+[DELAY] seq=100, delay=50ms
+[DELAY] seq=101, delay=50ms
+[DELAY] seq=102, delay=50ms
+[DELAY] seq=103, delay=50ms
+[DELAY] seq=104, delay=50ms
+[DELAY] seq=105, delay=50ms
+[DELAY] seq=106, delay=50ms
+[DELAY] seq=107, delay=50ms
+[DELAY] seq=108, delay=50ms
+[DELAY] seq=109, delay=50ms
+[DELAY] seq=110, delay=50ms
+[DELAY] seq=111, delay=50ms
+[DELAY] seq=112, delay=50ms
+[DELAY] seq=113, delay=50ms
+[DELAY] seq=114, delay=50ms
+[DELAY] seq=115, delay=50ms
+[DELAY] seq=116, delay=50ms
+[DELAY] seq=117, delay=50ms
+[DELAY] seq=118, delay=50ms
+[DELAY] seq=119, delay=50ms
+[DROP] seq=120, random=9, threshold=10%
+[DELAY] seq=121, delay=50ms
+[DELAY] seq=122, delay=50ms
+[DELAY] seq=123, delay=50ms
+[DROP] seq=124, random=7, threshold=10%
+[DELAY] seq=125, delay=50ms
+[DELAY] seq=126, delay=50ms
+[DELAY] seq=120, delay=50ms
+[DELAY] seq=124, delay=50ms
+[DELAY] seq=127, delay=50ms
+[DROP] seq=128, random=1, threshold=10%
+[DELAY] seq=129, delay=50ms
+[DELAY] seq=130, delay=50ms
+[DELAY] seq=128, delay=50ms
+[DELAY] seq=131, delay=50ms
+[DELAY] seq=132, delay=50ms
+[DELAY] seq=133, delay=50ms
+[DELAY] seq=134, delay=50ms
+[DELAY] seq=135, delay=50ms
+[DELAY] seq=136, delay=50ms
+[DELAY] seq=137, delay=50ms
+[DELAY] seq=138, delay=50ms
+[DELAY] seq=139, delay=50ms
+[DELAY] seq=140, delay=50ms
+[DELAY] seq=141, delay=50ms
+[DELAY] seq=142, delay=50ms
+[DELAY] seq=143, delay=50ms
+[DELAY] seq=144, delay=50ms
+[DELAY] seq=145, delay=50ms
+[DELAY] seq=146, delay=50ms
+[DROP] seq=147, random=4, threshold=10%
+[DELAY] seq=148, delay=50ms
+[DELAY] seq=149, delay=50ms
+[DELAY] seq=150, delay=50ms
+[DELAY] seq=151, delay=50ms
+[DELAY] seq=152, delay=50ms
+[DELAY] seq=147, delay=50ms
+[DELAY] seq=153, delay=50ms
+[DELAY] seq=154, delay=50ms
+[DELAY] seq=155, delay=50ms
+[DROP] seq=156, random=2, threshold=10%
+[DELAY] seq=157, delay=50ms
+[DELAY] seq=158, delay=50ms
+[DROP] seq=159, random=6, threshold=10%
+[DELAY] seq=156, delay=50ms
+[DELAY] seq=159, delay=50ms
+[DELAY] seq=160, delay=50ms
+[DELAY] seq=161, delay=50ms
+[DELAY] seq=162, delay=50ms
+[DELAY] seq=163, delay=50ms
+[DELAY] seq=164, delay=50ms
+[DELAY] seq=165, delay=50ms
+[DELAY] seq=166, delay=50ms
+[DELAY] seq=167, delay=50ms
+[DROP] seq=168, random=6, threshold=10%
+[DELAY] seq=169, delay=50ms
+[DELAY] seq=170, delay=50ms
+[DROP] seq=171, random=4, threshold=10%
+[DELAY] seq=172, delay=50ms
+[DELAY] seq=168, delay=50ms
+[DELAY] seq=171, delay=50ms
+[DELAY] seq=173, delay=50ms
+[DELAY] seq=174, delay=50ms
+[DELAY] seq=175, delay=50ms
+[DELAY] seq=176, delay=50ms
+[DELAY] seq=177, delay=50ms
+[DELAY] seq=178, delay=50ms
+[DELAY] seq=179, delay=50ms
+[DELAY] seq=180, delay=50ms
+[DROP] seq=181, random=4, threshold=10%
+[DELAY] seq=182, delay=50ms
+[DELAY] seq=183, delay=50ms
+[DROP] seq=184, random=7, threshold=10%
+[DELAY] seq=181, delay=50ms
+[DELAY] seq=185, delay=50ms
+[DELAY] seq=184, delay=50ms
+[DELAY] seq=186, delay=50ms
+[DELAY] seq=187, delay=50ms
+[DELAY] seq=188, delay=50ms
+[DELAY] seq=189, delay=50ms
+[DELAY] seq=190, delay=50ms
+[DELAY] seq=191, delay=50ms
+[DELAY] seq=192, delay=50ms
+[DELAY] seq=193, delay=50ms
+[DELAY] seq=194, delay=50ms
+[DELAY] seq=195, delay=50ms
+[DROP] seq=196, random=2, threshold=10%
+[DELAY] seq=197, delay=50ms
+[DROP] seq=198, random=3, threshold=10%
+[DROP] seq=199, random=0, threshold=10%
+[DROP] seq=200, random=7, threshold=10%
+[DELAY] seq=196, delay=50ms
+[DROP] seq=198, random=3, threshold=10%
+[DELAY] seq=199, delay=50ms
+[DELAY] seq=200, delay=50ms
+[DELAY] seq=198, delay=50ms
+[DELAY] seq=201, delay=50ms
+[DELAY] seq=202, delay=50ms
+[DELAY] seq=203, delay=50ms
+[DELAY] seq=204, delay=50ms
+[DELAY] seq=205, delay=50ms
+[DELAY] seq=206, delay=50ms
+[DELAY] seq=207, delay=50ms
+[DELAY] seq=208, delay=50ms
+[DELAY] seq=209, delay=50ms
+[DELAY] seq=210, delay=50ms
+[DELAY] seq=211, delay=50ms
+[DELAY] seq=212, delay=50ms
+[DELAY] seq=213, delay=50ms
+[DELAY] seq=214, delay=50ms
+[DELAY] seq=215, delay=50ms
+[DELAY] seq=216, delay=50ms
+[DELAY] seq=217, delay=50ms
+[DELAY] seq=218, delay=50ms
+[DELAY] seq=219, delay=50ms
+[DELAY] seq=220, delay=50ms
+[DELAY] seq=221, delay=50ms
+[DELAY] seq=222, delay=50ms
+[DELAY] seq=223, delay=50ms
+[DELAY] seq=224, delay=50ms
+[DELAY] seq=225, delay=50ms
+[DELAY] seq=226, delay=50ms
+[DROP] seq=227, random=2, threshold=10%
+[DELAY] seq=228, delay=50ms
+[DELAY] seq=227, delay=50ms
+
+========== 模拟日志结束 ==========

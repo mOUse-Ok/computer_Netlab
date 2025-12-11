@@ -210,7 +210,11 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                                 if (sackInfo.sack_blocks[i] >= g_sendWindow.base &&
                                     sackInfo.sack_blocks[i] < g_sendWindow.base + FIXED_WINDOW_SIZE) {
                                     int sackIdx = g_sendWindow.getIndex(sackInfo.sack_blocks[i]);
-                                    g_sendWindow.is_ack[sackIdx] = 1;
+                                    // 只有未确认的包才增加sentPackets
+                                    if (g_sendWindow.is_sent[sackIdx] && !g_sendWindow.is_ack[sackIdx]) {
+                                        g_sendWindow.is_ack[sackIdx] = 1;
+                                        sentPackets++;
+                                    }
                                 }
                             }
                             std::cout << "]" << std::endl;
