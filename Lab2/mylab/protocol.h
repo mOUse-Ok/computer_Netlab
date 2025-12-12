@@ -83,10 +83,17 @@ struct SendWindow {
     uint32_t last_ack;                          // 上一次收到的 ACK 序列号（用于检测重复 ACK）
     RenoPhase reno_phase;                       // 当前 RENO 阶段
     
+    // ===== 统计信息字段 =====
+    uint32_t total_packets_sent;                // 发送的总包数（含重传）
+    uint32_t total_retransmissions;             // 重传的总包数
+    clock_t transmission_start_time;            // 传输开始时间
+    int total_bytes_sent;                       // 发送的总字节数（不含协议头）
+    
     // ===== 默认构造函数 =====
     // 描述：初始化发送窗口所有字段为默认值，包括 RENO 拥塞控制参数
     SendWindow() : base(0), next_seq(0), cwnd(INITIAL_CWND), ssthresh(INITIAL_SSTHRESH),
-                   dup_ack_count(0), last_ack(0), reno_phase(SLOW_START) {
+                   dup_ack_count(0), last_ack(0), reno_phase(SLOW_START),
+                   total_packets_sent(0), total_retransmissions(0), transmission_start_time(0), total_bytes_sent(0) {
         // 初始化所有数组为0
         memset(is_sent, 0, sizeof(is_sent));
         memset(is_ack, 0, sizeof(is_ack));
@@ -113,6 +120,12 @@ struct SendWindow {
         dup_ack_count = 0;
         last_ack = initial_seq;
         reno_phase = SLOW_START;
+        
+        // 重置统计信息
+        total_packets_sent = 0;
+        total_retransmissions = 0;
+        transmission_start_time = clock();
+        total_bytes_sent = 0;
     }
     
     // ===== 获取有效发送窗口大小 =====
@@ -275,9 +288,16 @@ struct RecvWindow {
     int data_len[FIXED_WINDOW_SIZE];            // 窗口内已接收包的实际数据长度
     uint8_t is_received[FIXED_WINDOW_SIZE];     // 标记窗口内包是否已接收（0=未接收，1=已接收）
     
+    // ===== 统计信息字段 =====
+    uint32_t total_packets_received;            // 接收的总包数（含重复）
+    uint32_t total_packets_dropped;             // 模拟丢弃的总包数
+    clock_t transmission_start_time;            // 传输开始时间
+    int total_bytes_received;                   // 接收的总字节数（不含协议头）
+    
     // ===== 默认构造函数 =====
     // 描述：初始化接收窗口所有字段为默认值
-    RecvWindow() : base(0) {
+    RecvWindow() : base(0), total_packets_received(0), total_packets_dropped(0),
+                   transmission_start_time(0), total_bytes_received(0) {
         memset(data_buf, 0, sizeof(data_buf));
         memset(data_len, 0, sizeof(data_len));
         memset(is_received, 0, sizeof(is_received));
@@ -291,6 +311,12 @@ struct RecvWindow {
         memset(data_buf, 0, sizeof(data_buf));
         memset(data_len, 0, sizeof(data_len));
         memset(is_received, 0, sizeof(is_received));
+        
+        // 重置统计信息
+        total_packets_received = 0;
+        total_packets_dropped = 0;
+        transmission_start_time = clock();
+        total_bytes_received = 0;
     }
     
     // ===== 检查序列号是否在窗口范围内 =====

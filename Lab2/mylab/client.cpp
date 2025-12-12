@@ -168,6 +168,10 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                 return false;
             }
             
+            // 更新统计信息
+            g_sendWindow.total_packets_sent++;
+            g_sendWindow.total_bytes_sent += packetDataLen;
+            
             std::cout << "[Send] Data packet seq=" << g_sendWindow.next_seq 
                      << ", length=" << packetDataLen 
                      << ", window[" << g_sendWindow.base << "," 
@@ -263,6 +267,10 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                             sendto(clientSocket, sendBuffer, retxPacket.getTotalLen(), 0,
                                   (sockaddr*)&serverAddr, sizeof(serverAddr));
                             
+                            // 更新重传统计
+                            g_sendWindow.total_packets_sent++;
+                            g_sendWindow.total_retransmissions++;
+                            
                             g_sendWindow.send_time[lostIdx] = clock();  // 更新发送时间
                         }
                     }
@@ -301,6 +309,10 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                     retxPacket.serialize(sendBuffer);
                     sendto(clientSocket, sendBuffer, retxPacket.getTotalLen(), 0,
                           (sockaddr*)&serverAddr, sizeof(serverAddr));
+                    
+                    // 更新重传统计
+                    g_sendWindow.total_packets_sent++;
+                    g_sendWindow.total_retransmissions++;
                     
                     g_sendWindow.send_time[idx] = clock();  // 重置发送时间
                 }
@@ -529,6 +541,20 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
         state = CLOSED;
         std::cout << "[State Transition] TIME_WAIT -> CLOSED" << std::endl;
         std::cout << "[Success] Connection closed!\n" << std::endl;
+        
+        // 计算传输时间和平均吞吐率
+        clock_t endTime = clock();
+        double transmissionTime = (double)(endTime - g_sendWindow.transmission_start_time) / CLOCKS_PER_SEC;
+        double throughput = (transmissionTime > 0) ? (g_sendWindow.total_bytes_sent / transmissionTime / 1024.0) : 0;
+        
+        // 输出统计报告
+        std::cout << "\n========== Client Transmission Statistics ==========" << std::endl;
+        std::cout << "Total Packets Sent (incl. retrans): " << g_sendWindow.total_packets_sent << std::endl;
+        std::cout << "Total Retransmissions: " << g_sendWindow.total_retransmissions << std::endl;
+        std::cout << "Transmission Time: " << transmissionTime << " seconds" << std::endl;
+        std::cout << "Average Throughput: " << throughput << " KB/s" << std::endl;
+        std::cout << "====================================================\n" << std::endl;
+        
         return true;
     }
     

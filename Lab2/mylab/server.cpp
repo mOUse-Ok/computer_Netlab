@@ -204,8 +204,12 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
         
         // ===== 模拟丢包 =====
         if (shouldDropPacket(recvSeq)) {
+            g_recvWindow.total_packets_dropped++;
             continue;  // 丢弃该包，不做任何处理
         }
+        
+        // 更新接收统计
+        g_recvWindow.total_packets_received++;
         
         // ===== 模拟延迟 =====
         simulateDelay(recvSeq);
@@ -222,6 +226,12 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
                 memcpy(g_recvWindow.data_buf[idx], recvPacket.data, recvPacket.dataLen);
                 g_recvWindow.data_len[idx] = recvPacket.dataLen;
                 g_recvWindow.is_received[idx] = 1;
+                
+                // 更新接收字节数
+                g_recvWindow.total_bytes_received += recvPacket.dataLen;
+                
+                // 更新接收字节数
+                g_recvWindow.total_bytes_received += recvPacket.dataLen;
                 
                 std::cout << "[Receive] Data packet seq=" << recvSeq 
                          << ", length=" << recvPacket.dataLen
@@ -467,6 +477,20 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
         state = CLOSED;
         std::cout << "[State Transition] LAST_ACK -> CLOSED" << std::endl;
         std::cout << "[Success] Connection closed!\n" << std::endl;
+        
+        // 计算传输时间和平均吞吐率
+        clock_t endTime = clock();
+        double transmissionTime = (double)(endTime - g_recvWindow.transmission_start_time) / CLOCKS_PER_SEC;
+        double throughput = (transmissionTime > 0) ? (g_recvWindow.total_bytes_received / transmissionTime / 1024.0) : 0;
+        
+        // 输出统计报告
+        std::cout << "\n========== Server Transmission Statistics ==========" << std::endl;
+        std::cout << "Total Packets Received: " << g_recvWindow.total_packets_received << std::endl;
+        std::cout << "Total Packets Dropped (simulated): " << g_recvWindow.total_packets_dropped << std::endl;
+        std::cout << "Transmission Time: " << transmissionTime << " seconds" << std::endl;
+        std::cout << "Average Throughput: " << throughput << " KB/s" << std::endl;
+        std::cout << "====================================================\n" << std::endl;
+        
         return true;
     }
     
