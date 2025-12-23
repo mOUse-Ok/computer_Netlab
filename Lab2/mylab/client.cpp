@@ -56,8 +56,9 @@ bool readFileContent(const std::string& filename, std::vector<char>& content) {
     return true;
 }
 
-// ===== 发送文件名信息 =====
+// ===== 发送文件名信息 - 已弃用 =====
 // 在传输文件数据之前，先发送文件名让服务端知道如何保存
+/*
 bool sendFilename(SOCKET clientSocket, sockaddr_in& serverAddr, 
                   const std::string& filename, uint32_t& clientSeq) {
     // 构造文件名包：格式为 "FILENAME:" + 文件名
@@ -108,6 +109,7 @@ bool sendFilename(SOCKET clientSocket, sockaddr_in& serverAddr,
     clientSeq++;  // 即使没收到ACK也更新序列号
     return true;
 }
+*/
 
 // ===== 传输单个文件 =====
 bool transferFile(SOCKET clientSocket, sockaddr_in& serverAddr, 
@@ -119,11 +121,11 @@ bool transferFile(SOCKET clientSocket, sockaddr_in& serverAddr,
     
     std::cout << "\n[Transfer] Starting transfer of '" << filename << "'..." << std::endl;
     
-    // 首先发送文件名
-    if (!sendFilename(clientSocket, serverAddr, filename, clientSeq)) {
-        std::cerr << "[Error] Failed to send filename" << std::endl;
-        return false;
-    }
+    // 首先发送文件名 - 已移除，改为服务端手动输入
+    // if (!sendFilename(clientSocket, serverAddr, filename, clientSeq)) {
+    //     std::cerr << "[Error] Failed to send filename" << std::endl;
+    //     return false;
+    // }
     
     // 使用pipelineSend发送文件内容
     bool result = pipelineSend(clientSocket, serverAddr, content.data(), content.size(), clientSeq);
@@ -569,17 +571,10 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
         std::cout << "[State Transition] TIME_WAIT -> CLOSED" << std::endl;
         std::cout << "[Success] Connection closed!\n" << std::endl;
         
-        // 计算传输时间和平均吞吐率
-        clock_t endTime = clock();
-        double transmissionTime = (double)(endTime - g_sendWindow.transmission_start_time) / CLOCKS_PER_SEC;
-        double throughput = (transmissionTime > 0) ? (g_sendWindow.total_bytes_sent / transmissionTime / 1024.0) : 0;
-        
-        // 输出统计报告
+        // 输出统计报告（客户端只统计发送信息）
         std::cout << "\n========== Client Transmission Statistics ==========" << std::endl;
         std::cout << "Total Packets Sent (incl. retrans): " << g_sendWindow.total_packets_sent << std::endl;
         std::cout << "Total Retransmissions: " << g_sendWindow.total_retransmissions << std::endl;
-        std::cout << "Transmission Time: " << transmissionTime << " seconds" << std::endl;
-        std::cout << "Average Throughput: " << throughput << " KB/s" << std::endl;
         std::cout << "====================================================\n" << std::endl;
         
         return true;
@@ -635,6 +630,15 @@ int main() {
         std::cerr << "socket creation failed: " << WSAGetLastError() << std::endl;
         WSACleanup();  // 清理Winsock资源
         return 1;
+    }
+    
+    // 增加 Socket 发送和接收缓冲区大小，防止高速传输时缓冲区溢出
+    int bufSize = 1024 * 1024;  // 1MB 缓冲区
+    if (setsockopt(clientSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&bufSize, sizeof(bufSize)) == SOCKET_ERROR) {
+        std::cerr << "Warning: Failed to set send buffer size: " << WSAGetLastError() << std::endl;
+    }
+    if (setsockopt(clientSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&bufSize, sizeof(bufSize)) == SOCKET_ERROR) {
+        std::cerr << "Warning: Failed to set receive buffer size: " << WSAGetLastError() << std::endl;
     }
 
     // 3. 设置服务端地址结构体

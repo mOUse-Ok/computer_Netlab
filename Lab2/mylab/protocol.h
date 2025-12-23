@@ -357,36 +357,35 @@ struct SACKInfo {
     }
 };
 
-// RFC 1071 校验和计算函数
-inline uint16_t calculate_checksum(const void* data, int len) {
-    // 累加和，使用32位以便处理进位
+// RFC 1071 校验和计算辅助函数：计算原始累加和
+inline uint32_t calculate_raw_sum(const void* data, int len) {
     uint32_t sum = 0;
-    // 将数据指针转换为字节指针，逐字节处理以避免对齐问题
     const uint8_t* ptr = (const uint8_t*)data;
     
-    // 按16位（2字节）为单位进行累加
     while (len > 1) {
-        // 将两个字节组合成一个16位值（网络字节序：高字节在前）
-        uint16_t word = ((uint16_t)ptr[0] << 8) | ptr[1];
-        sum += word;   // 累加当前16位值
-        ptr += 2;      // 移动指针
-        len -= 2;      // 剩余长度减2
+        sum += ((uint16_t)ptr[0] << 8) | ptr[1];
+        ptr += 2;
+        len -= 2;
     }
     
-    // 如果长度为奇数，处理最后一个字节
-    // 将其视为高8位，低8位补0
     if (len == 1) {
         sum += (uint16_t)(*ptr) << 8;
     }
     
-    // 将高16位的进位加到低16位
-    // 可能产生新的进位，所以用while循环处理
+    return sum;
+}
+
+// RFC 1071 校验和计算函数：折叠并取反
+inline uint16_t fold_checksum(uint32_t sum) {
     while (sum >> 16) {
         sum = (sum & 0xFFFF) + (sum >> 16);
     }
-    
-    // 取反得到1的补码，返回16位校验和
     return (uint16_t)(~sum);
+}
+
+// 保持兼容的旧接口
+inline uint16_t calculate_checksum(const void* data, int len) {
+    return fold_checksum(calculate_raw_sum(data, len));
 }
 
 // UDP协议头结构体（20字节）
@@ -415,32 +414,25 @@ struct UDPHeader {
     void calculateChecksum(const char* data, int dataLen) {
         checksum = 0;
         
-        // 创建临时缓冲区
-        int totalLen = HEADER_SIZE + dataLen;
-        char* buffer = new char[totalLen];
-        
-        memcpy(buffer, this, HEADER_SIZE);
+        // 分步计算校验和，避免内存分配和拷贝
+        uint32_t sum = calculate_raw_sum(this, HEADER_SIZE);
         if (dataLen > 0 && data != nullptr) {
-            memcpy(buffer + HEADER_SIZE, data, dataLen);
+            sum += calculate_raw_sum(data, dataLen);
         }
         
-        checksum = calculate_checksum(buffer, totalLen);
-        delete[] buffer;
+        checksum = fold_checksum(sum);
     }
     
     // 验证校验和：返回true表示数据完整
     bool verifyChecksum(const char* data, int dataLen) const {
-        int totalLen = HEADER_SIZE + dataLen;
-        char* buffer = new char[totalLen];
-        
-        memcpy(buffer, this, HEADER_SIZE);
+        // 分步计算校验和，避免内存分配和拷贝
+        // 注意：此时 this->checksum 包含接收到的校验和
+        uint32_t sum = calculate_raw_sum(this, HEADER_SIZE);
         if (dataLen > 0 && data != nullptr) {
-            memcpy(buffer + HEADER_SIZE, data, dataLen);
+            sum += calculate_raw_sum(data, dataLen);
         }
         
-        uint16_t result = calculate_checksum(buffer, totalLen);
-        delete[] buffer;
-        return (result == 0);
+        return (fold_checksum(sum) == 0);
     }
 };
 #pragma pack(pop)

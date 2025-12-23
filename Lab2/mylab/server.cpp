@@ -16,8 +16,13 @@ const char* RECEIVE_DIR = "receive";
 std::string g_currentFilename;
 
 // 全局缓冲区：存储接收到的文件数据
-static char g_receivedFileData[1024 * 1024];  // 1MB缓冲区
+static char g_receivedFileData[13 * 1024 * 1024];  // 13MB缓冲区（支持更大文件）
 static int g_receivedFileLen = 0;
+
+// 全局变量：用于统计传输时间
+static clock_t g_firstPacketTime = 0;   // 接收到第一个数据包的时间
+static clock_t g_lastPacketTime = 0;    // 接收到最后一个数据包的时间
+static bool g_firstPacketReceived = false;  // 是否已接收到第一个数据包
 
 // 全局接收窗口：管理流水线接收的滑动窗口状态
 RecvWindow g_recvWindow;
@@ -208,13 +213,17 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
             if (g_recvWindow.is_received[idx]) {
                 std::cout << "[Duplicate] Received duplicate packet seq=" << recvSeq << ", sending ACK" << std::endl;
             } else {
+                // 记录接收时间（第一个数据包开始计时）
+                if (!g_firstPacketReceived) {
+                    g_firstPacketTime = clock();
+                    g_firstPacketReceived = true;
+                }
+                g_lastPacketTime = clock();  // 每次接收到新包都更新
+                
                 // 缓存数据包
                 memcpy(g_recvWindow.data_buf[idx], recvPacket.data, recvPacket.dataLen);
                 g_recvWindow.data_len[idx] = recvPacket.dataLen;
                 g_recvWindow.is_received[idx] = 1;
-                
-                // 更新接收字节数
-                //g_recvWindow.total_bytes_received += recvPacket.dataLen;这里重复更新不会产生问题吗？
                 
                 // 更新接收字节数
                 g_recvWindow.total_bytes_received += recvPacket.dataLen;
@@ -452,8 +461,27 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
     
     Packet recvPacket;
     if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
-        std::cout << "[Error] Packet checksum failed" << std::endl;
-        return false;
+        std::cout << "[Warning] Packet checksum failed, treating as timeout" << std::endl;
+        // 校验失败时也继续关闭连接，输出统计信息
+        state = CLOSED;
+        std::cout << "[State Transition] LAST_ACK -> CLOSED" << std::endl;
+        
+        // 计算传输时间（从第一个数据包到最后一个数据包）
+        double transmissionTime = 0;
+        if (g_firstPacketReceived && g_lastPacketTime > g_firstPacketTime) {
+            transmissionTime = (double)(g_lastPacketTime - g_firstPacketTime) / CLOCKS_PER_SEC;
+        }
+        double throughput = (transmissionTime > 0) ? (g_recvWindow.total_bytes_received / transmissionTime / 1024.0) : 0;
+        
+        std::cout << "\n========== Server Transmission Statistics ==========" << std::endl;
+        std::cout << "Total Packets Received: " << g_recvWindow.total_packets_received << std::endl;
+        std::cout << "Total Packets Dropped (simulated): " << g_recvWindow.total_packets_dropped << std::endl;
+        std::cout << "Total Bytes Received: " << g_recvWindow.total_bytes_received << " bytes" << std::endl;
+        std::cout << "Transmission Time: " << transmissionTime << " seconds" << std::endl;
+        std::cout << "Average Throughput: " << throughput << " KB/s" << std::endl;
+        std::cout << "====================================================\n" << std::endl;
+        
+        return true;
     }
     
     if ((recvPacket.header.flag & FLAG_ACK) && recvPacket.header.ack == serverSeq + 1) {
@@ -462,15 +490,20 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
         std::cout << "[State Transition] LAST_ACK -> CLOSED" << std::endl;
         std::cout << "[Success] Connection closed!\n" << std::endl;
         
-        // 计算传输时间和平均吞吐率
-        clock_t endTime = clock();
-        double transmissionTime = (double)(endTime - g_recvWindow.transmission_start_time) / CLOCKS_PER_SEC;
+        // 计算传输时间（从第一个数据包到最后一个数据包）
+        double transmissionTime = 0;
+        if (g_firstPacketReceived && g_lastPacketTime > g_firstPacketTime) {
+            transmissionTime = (double)(g_lastPacketTime - g_firstPacketTime) / CLOCKS_PER_SEC;
+        }
+        
+        // 计算平均吞吐率（不包含模拟丢包丢掉的数据包）
         double throughput = (transmissionTime > 0) ? (g_recvWindow.total_bytes_received / transmissionTime / 1024.0) : 0;
         
         // 输出统计报告
         std::cout << "\n========== Server Transmission Statistics ==========" << std::endl;
         std::cout << "Total Packets Received: " << g_recvWindow.total_packets_received << std::endl;
         std::cout << "Total Packets Dropped (simulated): " << g_recvWindow.total_packets_dropped << std::endl;
+        std::cout << "Total Bytes Received: " << g_recvWindow.total_bytes_received << " bytes" << std::endl;
         std::cout << "Transmission Time: " << transmissionTime << " seconds" << std::endl;
         std::cout << "Average Throughput: " << throughput << " KB/s" << std::endl;
         std::cout << "====================================================\n" << std::endl;
@@ -543,6 +576,12 @@ int main() {
         WSACleanup();  // 清理Winsock资源
         return 1;
     }
+    
+    // 增加 Socket 接收缓冲区大小，防止高速传输时缓冲区溢出导致数据损坏
+    int recvBufSize = 1024 * 1024;  // 1MB 接收缓冲区
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&recvBufSize, sizeof(recvBufSize)) == SOCKET_ERROR) {
+        std::cerr << "Warning: Failed to set receive buffer size: " << WSAGetLastError() << std::endl;
+    }
 
     // 3. 设置服务端地址结构体
     sockaddr_in serverAddr;
@@ -585,47 +624,36 @@ int main() {
     bool finReceived = false;
     uint32_t finSeq = 0;
     
-    // 步骤1：首先接收文件名包
-    std::cout << "\n[Server] Waiting for filename..." << std::endl;
+    // 重置计时变量
+    g_firstPacketReceived = false;
+    g_firstPacketTime = 0;
+    g_lastPacketTime = 0;
     
-    char recvBuffer[MAX_PACKET_SIZE];
-    int timeout = 10000;  // 10秒超时
-    setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    // 重置文件名
+    g_currentFilename.clear();
     
-    sockaddr_in fromAddr;
-    int fromAddrLen = sizeof(fromAddr);
-    int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                 (sockaddr*)&fromAddr, &fromAddrLen);
+    // 步骤1：由用户在服务端输入文件名
+    std::cout << "\n[Server] Please enter the filename to save as (in 'receive' directory): ";
+    // 清除可能的输入缓冲
+    std::cin.clear();
+    // 读取一行输入
+    std::getline(std::cin, g_currentFilename);
     
-    if (bytesReceived > 0) {
-        Packet fnPacket;
-        if (fnPacket.deserialize(recvBuffer, bytesReceived)) {
-            // 检查是否是文件名包（以"FILENAME:"开头）
-            std::string data(fnPacket.data, fnPacket.dataLen);
-            if (data.find("FILENAME:") == 0) {
-                g_currentFilename = data.substr(9);  // 提取文件名
-                std::cout << "[Receive] Filename: " << g_currentFilename << std::endl;
-                
-                // 发送ACK确认
-                Packet ackPacket;
-                ackPacket.header.seq = serverSeq;
-                ackPacket.header.ack = fnPacket.header.seq + 1;
-                ackPacket.header.flag = FLAG_ACK;
-                ackPacket.dataLen = 0;
-                ackPacket.header.len = 0;
-                ackPacket.header.calculateChecksum(ackPacket.data, 0);
-                
-                char sendBuffer[MAX_PACKET_SIZE];
-                ackPacket.serialize(sendBuffer);
-                sendto(serverSocket, sendBuffer, ackPacket.getTotalLen(), 0,
-                      (sockaddr*)&clientAddr, clientAddrLen);
-                
-                std::cout << "[Send] Filename ACK" << std::endl;
-                
-                // 更新序列号
-                clientSeq = fnPacket.header.seq + 1;
-            }
-        }
+    // 去除首尾空格
+    size_t start = g_currentFilename.find_first_not_of(" \t\r\n");
+    size_t end = g_currentFilename.find_last_not_of(" \t\r\n");
+    if (start != std::string::npos && end != std::string::npos) {
+        g_currentFilename = g_currentFilename.substr(start, end - start + 1);
+    } else {
+        g_currentFilename.clear();
+    }
+    
+    if (g_currentFilename.empty()) {
+        std::cout << "[Warning] No filename entered, will use default name" << std::endl;
+        // 使用默认文件名
+        g_currentFilename = "received_file.dat";
+    } else {
+        std::cout << "[Info] File will be saved as: " << g_currentFilename << std::endl;
     }
     
     // 步骤2：使用流水线方式接收文件数据
