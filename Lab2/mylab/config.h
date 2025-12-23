@@ -312,7 +312,7 @@
  *   - 正常测试：5-15%
  *   - 压力测试：20-30%
  */
-#define SIMULATE_LOSS_RATE 10
+#define SIMULATE_LOSS_RATE 5
 
 /**
  * 是否启用延迟模拟
@@ -338,7 +338,7 @@
  *   - 本地测试：0-50ms
  *   - 模拟广域网：100-300ms
  */
-#define SIMULATE_DELAY_MS 50
+#define SIMULATE_DELAY_MS 5
 
 
 // ============================================================================

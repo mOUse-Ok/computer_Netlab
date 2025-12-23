@@ -33,25 +33,6 @@ std::vector<std::string> getTestFiles() {
     return files;
 }
 
-// ===== 打印testfile目录下的文件列表 =====
-void printTestFiles(const std::vector<std::string>& files) {
-    std::cout << "\n========== testfile Directory Files ==========" << std::endl;
-    if (files.empty()) {
-        std::cout << "  (No files found)" << std::endl;
-    } else {
-        for (size_t i = 0; i < files.size(); i++) {
-            std::cout << "  [" << (i + 1) << "] " << files[i] << std::endl;
-        }
-    }
-    std::cout << "===============================================" << std::endl;
-    std::cout << "Commands:" << std::endl;
-    std::cout << "  - Enter filename to transfer that file" << std::endl;
-    std::cout << "  - Enter 'test all' to transfer all files" << std::endl;
-    std::cout << "  - Enter './quit' to disconnect and exit" << std::endl;
-    std::cout << "===============================================" << std::endl;
-    std::cout << "Input: ";
-}
-
 // ===== 读取文件内容 =====
 bool readFileContent(const std::string& filename, std::vector<char>& content) {
     std::string filepath = std::string(TESTFILE_DIR) + "\\" + filename;
@@ -75,6 +56,59 @@ bool readFileContent(const std::string& filename, std::vector<char>& content) {
     return true;
 }
 
+// ===== 发送文件名信息 =====
+// 在传输文件数据之前，先发送文件名让服务端知道如何保存
+bool sendFilename(SOCKET clientSocket, sockaddr_in& serverAddr, 
+                  const std::string& filename, uint32_t& clientSeq) {
+    // 构造文件名包：格式为 "FILENAME:" + 文件名
+    std::string filenameData = "FILENAME:" + filename;
+    
+    Packet fnPacket;
+    fnPacket.header.seq = clientSeq;
+    fnPacket.header.ack = 0;
+    fnPacket.header.flag = FLAG_ACK;  // 使用ACK标志表示数据包
+    fnPacket.header.win = FIXED_WINDOW_SIZE;
+    fnPacket.setData(filenameData.c_str(), filenameData.length());
+    
+    char sendBuffer[MAX_PACKET_SIZE];
+    fnPacket.serialize(sendBuffer);
+    int bytesSent = sendto(clientSocket, sendBuffer, fnPacket.getTotalLen(), 0,
+                          (sockaddr*)&serverAddr, sizeof(serverAddr));
+    
+    if (bytesSent == SOCKET_ERROR) {
+        std::cerr << "[Error] Failed to send filename: " << WSAGetLastError() << std::endl;
+        return false;
+    }
+    
+    std::cout << "[Send] Filename packet: " << filename << std::endl;
+    
+    // 等待ACK
+    int timeout = TIMEOUT_MS;
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    
+    char recvBuffer[MAX_PACKET_SIZE];
+    sockaddr_in fromAddr;
+    int fromAddrLen = sizeof(fromAddr);
+    
+    int bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0,
+                                 (sockaddr*)&fromAddr, &fromAddrLen);
+    
+    if (bytesReceived > 0) {
+        Packet ackPacket;
+        if (ackPacket.deserialize(recvBuffer, bytesReceived)) {
+            if ((ackPacket.header.flag & FLAG_ACK) && ackPacket.header.ack == clientSeq + 1) {
+                std::cout << "[Receive] Filename ACK received" << std::endl;
+                clientSeq++;  // 更新序列号
+                return true;
+            }
+        }
+    }
+    
+    std::cerr << "[Warning] Filename ACK not received, continuing anyway..." << std::endl;
+    clientSeq++;  // 即使没收到ACK也更新序列号
+    return true;
+}
+
 // ===== 传输单个文件 =====
 bool transferFile(SOCKET clientSocket, sockaddr_in& serverAddr, 
                   const std::string& filename, uint32_t& clientSeq) {
@@ -84,6 +118,12 @@ bool transferFile(SOCKET clientSocket, sockaddr_in& serverAddr,
     }
     
     std::cout << "\n[Transfer] Starting transfer of '" << filename << "'..." << std::endl;
+    
+    // 首先发送文件名
+    if (!sendFilename(clientSocket, serverAddr, filename, clientSeq)) {
+        std::cerr << "[Error] Failed to send filename" << std::endl;
+        return false;
+    }
     
     // 使用pipelineSend发送文件内容
     bool result = pipelineSend(clientSocket, serverAddr, content.data(), content.size(), clientSeq);
@@ -99,21 +139,10 @@ bool transferFile(SOCKET clientSocket, sockaddr_in& serverAddr,
     return result;
 }
 
-// 注意：SERVER_PORT、SERVER_IP、BUFFER_SIZE等常量已在config.h中定义
-
-// ===== 全局发送窗口 =====
-// 描述：用于管理流水线发送的滑动窗口状态
+// 全局发送窗口：管理流水线发送的滑动窗口状态
 SendWindow g_sendWindow;
 
-// ===== 流水线发送数据函数（支持SACK） =====
-// 描述：使用流水线方式发送大量数据，支持选择确认和固定窗口流量控制
-// 参数：
-//   clientSocket - 客户端套接字
-//   serverAddr   - 服务端地址
-//   data         - 要发送的数据
-//   dataLen      - 数据长度
-//   baseSeq      - 起始序列号
-// 返回值：true表示发送成功，false表示发送失败
+// 流水线发送数据（支持SACK和RENO拥塞控制）
 bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr, 
                   const char* data, int dataLen, uint32_t baseSeq) {
     // 初始化发送窗口
@@ -327,8 +356,7 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
     return true;
 }
 
-// ===== 三次握手函数：建立连接 =====
-// 返回值：true表示连接成功，false表示连接失败
+// 三次握手：建立连接
 bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq, uint32_t& serverSeq) {
     ConnectionState state = CLOSED;
     int retries = 0;  // 重传次数
@@ -433,8 +461,7 @@ bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq
     return false;
 }
 
-// ===== 四次挥手函数：关闭连接 =====
-// 返回值：true表示关闭成功，false表示关闭失败
+// 四次挥手：关闭连接
 bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clientSeq, uint32_t serverSeq) {
     ConnectionState state = ESTABLISHED;
     std::cout << "\n[Four-way Handshake] Starting connection closure..." << std::endl;
@@ -629,74 +656,44 @@ int main() {
         return 1;
     }
 
-    // 5. 连接已建立，进入文件传输模式
-    std::cout << "\n===== File Transfer Mode (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
+    // 5. 连接已建立，进入单文件传输模式
+    std::cout << "\n===== Single File Transfer Mode (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
     std::cout << "[RENO] RENO congestion control enabled" << std::endl;
     
-    bool running = true;
-    int transferCount = 0;  // 传输计数器
+    bool transferSuccess = false;
     
-    while (running) {
-        // 获取testfile目录下的文件列表
-        std::vector<std::string> files = getTestFiles();
-        
-        // 打印文件列表
-        printTestFiles(files);
-        
-        // 读取用户输入
-        std::string input;
-        std::getline(std::cin, input);
-        
-        // 去除首尾空格
-        size_t start = input.find_first_not_of(" \t");
-        size_t end = input.find_last_not_of(" \t");
-        if (start != std::string::npos && end != std::string::npos) {
-            input = input.substr(start, end - start + 1);
-        } else {
-            input.clear();
+    // 获取testfile目录下的文件列表
+    std::vector<std::string> files = getTestFiles();
+    
+    // 打印文件列表（简化版）
+    std::cout << "\n========== testfile Directory Files ==========" << std::endl;
+    if (files.empty()) {
+        std::cout << "  (No files found)" << std::endl;
+    } else {
+        for (size_t i = 0; i < files.size(); i++) {
+            std::cout << "  [" << (i + 1) << "] " << files[i] << std::endl;
         }
-        
-        // 检查用户输入
-        if (input.empty()) {
-            std::cout << "[Info] Empty input, please try again." << std::endl;
-            continue;
-        }
-        
-        // 处理退出命令
-        if (input == "./quit") {
-            std::cout << "\n[Info] Quit command received, disconnecting..." << std::endl;
-            running = false;
-            break;
-        }
-        
-        // 处理 "test all" 命令
-        if (input == "test all") {
-            if (files.empty()) {
-                std::cout << "[Warning] No files to transfer in testfile directory." << std::endl;
-                continue;
-            }
-            
-            std::cout << "\n[Test All] Transferring all " << files.size() << " files..." << std::endl;
-            int successCount = 0;
-            
-            for (size_t i = 0; i < files.size(); i++) {
-                std::cout << "\n========== File " << (i + 1) << "/" << files.size() 
-                         << ": " << files[i] << " ==========" << std::endl;
-                
-                if (transferFile(clientSocket, serverAddr, files[i], clientSeq)) {
-                    successCount++;
-                    transferCount++;
-                }
-                
-                // 在文件之间稍作等待，让服务端处理完成
-                Sleep(500);
-            }
-            
-            std::cout << "\n[Test All] Completed: " << successCount << "/" << files.size() 
-                     << " files transferred successfully." << std::endl;
-            continue;
-        }
-        
+    }
+    std::cout << "===============================================" << std::endl;
+    std::cout << "Please enter the filename to transfer: ";
+    
+    // 读取用户输入
+    std::string input;
+    std::getline(std::cin, input);
+    
+    // 去除首尾空格
+    size_t start = input.find_first_not_of(" \t");
+    size_t end = input.find_last_not_of(" \t");
+    if (start != std::string::npos && end != std::string::npos) {
+        input = input.substr(start, end - start + 1);
+    } else {
+        input.clear();
+    }
+    
+    // 检查用户输入
+    if (input.empty()) {
+        std::cout << "[Error] Empty input, exiting..." << std::endl;
+    } else {
         // 检查输入的文件名是否存在
         bool found = false;
         for (const auto& file : files) {
@@ -708,20 +705,16 @@ int main() {
         
         if (!found) {
             std::cout << "[Error] File '" << input << "' not found in testfile directory." << std::endl;
-            std::cout << "[Hint] Please enter an exact filename from the list above." << std::endl;
-            continue;
+        } else {
+            // 传输指定文件
+            transferSuccess = transferFile(clientSocket, serverAddr, input, clientSeq);
+            
+            // 传输完成后稍作等待
+            Sleep(500);
         }
-        
-        // 传输指定文件
-        if (transferFile(clientSocket, serverAddr, input, clientSeq)) {
-            transferCount++;
-        }
-        
-        // 传输完成后稍作等待
-        Sleep(500);
     }
     
-    std::cout << "\n[Summary] Total files transferred: " << transferCount << std::endl;
+    std::cout << "\n[Summary] File transfer " << (transferSuccess ? "succeeded" : "failed or skipped") << std::endl;
 
     // 6. 执行四次挥手关闭连接
     if (!closeConnection(clientSocket, serverAddr, clientSeq, serverSeq)) {

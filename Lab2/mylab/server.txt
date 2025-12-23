@@ -1,16 +1,16 @@
 
 ===== Network Simulation Configuration =====
 Loss Simulation: Enabled
-Loss Rate: 10%
+Loss Rate: 5%
 Delay Simulation: Enabled
-Delay Time: 50ms
+Delay Time: 5ms
 =============================================
 
 UDP Server is running on port 8888
 Waiting for client messages...
 
 [Three-way Handshake] Waiting for client connection...
-[Received] SYN packet (seq=0) from 127.0.0.1:51751
+[Received] SYN packet (seq=0) from 127.0.0.1:49862
 [State Transition] CLOSED -> SYN_RCVD
 [Sent] SYN+ACK packet (seq=0, ack=1)
 [Received] ACK packet (ack=1)
@@ -21,1723 +21,901 @@ Waiting for client messages...
 ===== Pipeline Receive Mode (window size=8) =====
 [Server] Ready to receive file transfers from client...
 
-[Pipeline Receive] Starting to receive data, window size=8, starting sequence number=1
-[Timeout] Waiting for data packet timeout (1/3)
-[Timeout] Waiting for data packet timeout (2/3)
-[Simulation] DROPPED packet seq=1 (random=2, threshold=10)
-[Simulation] DELAY packet seq=1 for 50ms
-[Receive] Data packet seq=1, length=8172, window[1,8]
-[Window Slide] base: 1 -> 2
-[Send] ACK packet ack=2, win=8
-[Simulation] DELAY packet seq=2 for 50ms
+[Server] Waiting for filename...
+[Receive] Filename: 1.jpg
+[Send] Filename ACK
+
+[Pipeline Receive] Starting to receive data, window size=8, starting sequence number=2
+[Simulation] DELAY packet seq=2 for 5ms
 [Receive] Data packet seq=2, length=8172, window[2,9]
 [Window Slide] base: 2 -> 3
 [Send] ACK packet ack=3, win=8
-[Simulation] DROPPED packet seq=3 (random=2, threshold=10)
-[Simulation] DELAY packet seq=4 for 50ms
-[Receive] Data packet seq=4, length=8172, window[3,10]
-[Send] ACK+SACK packet ack=3, SACK blocks=[4], win=8
-[Simulation] DELAY packet seq=3 for 50ms
+[Simulation] DELAY packet seq=3 for 5ms
 [Receive] Data packet seq=3, length=8172, window[3,10]
-[Window Slide] base: 3 -> 5
+[Window Slide] base: 3 -> 4
+[Send] ACK packet ack=4, win=8
+[Simulation] DELAY packet seq=4 for 5ms
+[Receive] Data packet seq=4, length=8172, window[4,11]
+[Window Slide] base: 4 -> 5
 [Send] ACK packet ack=5, win=8
-[Simulation] DELAY packet seq=5 for 50ms
+[Simulation] DELAY packet seq=5 for 5ms
 [Receive] Data packet seq=5, length=8172, window[5,12]
 [Window Slide] base: 5 -> 6
 [Send] ACK packet ack=6, win=8
-[Simulation] DROPPED packet seq=6 (random=8, threshold=10)
-[Simulation] DELAY packet seq=7 for 50ms
-[Receive] Data packet seq=7, length=8172, window[6,13]
-[Send] ACK+SACK packet ack=6, SACK blocks=[7], win=8
-[Simulation] DELAY packet seq=8 for 50ms
-[Receive] Data packet seq=8, length=8172, window[6,13]
-[Send] ACK+SACK packet ack=6, SACK blocks=[7,8], win=8
-[Simulation] DELAY packet seq=6 for 50ms
+[Simulation] DELAY packet seq=6 for 5ms
 [Receive] Data packet seq=6, length=8172, window[6,13]
-[Window Slide] base: 6 -> 9
+[Window Slide] base: 6 -> 7
+[Send] ACK packet ack=7, win=8
+[Simulation] DELAY packet seq=7 for 5ms
+[Receive] Data packet seq=7, length=8172, window[7,14]
+[Window Slide] base: 7 -> 8
+[Send] ACK packet ack=8, win=8
+[Simulation] DELAY packet seq=8 for 5ms
+[Receive] Data packet seq=8, length=8172, window[8,15]
+[Window Slide] base: 8 -> 9
 [Send] ACK packet ack=9, win=8
-[Simulation] DELAY packet seq=9 for 50ms
+[Simulation] DELAY packet seq=9 for 5ms
 [Receive] Data packet seq=9, length=8172, window[9,16]
 [Window Slide] base: 9 -> 10
 [Send] ACK packet ack=10, win=8
-[Simulation] DELAY packet seq=10 for 50ms
+[Simulation] DELAY packet seq=10 for 5ms
 [Receive] Data packet seq=10, length=8172, window[10,17]
 [Window Slide] base: 10 -> 11
 [Send] ACK packet ack=11, win=8
-[Simulation] DELAY packet seq=11 for 50ms
+[Simulation] DELAY packet seq=11 for 5ms
 [Receive] Data packet seq=11, length=8172, window[11,18]
 [Window Slide] base: 11 -> 12
 [Send] ACK packet ack=12, win=8
-[Simulation] DELAY packet seq=12 for 50ms
+[Simulation] DELAY packet seq=12 for 5ms
 [Receive] Data packet seq=12, length=8172, window[12,19]
 [Window Slide] base: 12 -> 13
 [Send] ACK packet ack=13, win=8
-[Simulation] DROPPED packet seq=13 (random=1, threshold=10)
-[Simulation] DELAY packet seq=14 for 50ms
-[Receive] Data packet seq=14, length=8172, window[13,20]
-[Send] ACK+SACK packet ack=13, SACK blocks=[14], win=8
-[Simulation] DELAY packet seq=15 for 50ms
-[Receive] Data packet seq=15, length=8172, window[13,20]
-[Send] ACK+SACK packet ack=13, SACK blocks=[14,15], win=8
-[Simulation] DELAY packet seq=13 for 50ms
+[Simulation] DELAY packet seq=13 for 5ms
 [Receive] Data packet seq=13, length=8172, window[13,20]
-[Window Slide] base: 13 -> 16
+[Window Slide] base: 13 -> 14
+[Send] ACK packet ack=14, win=8
+[Simulation] DELAY packet seq=14 for 5ms
+[Receive] Data packet seq=14, length=8172, window[14,21]
+[Window Slide] base: 14 -> 15
+[Send] ACK packet ack=15, win=8
+[Simulation] DELAY packet seq=15 for 5ms
+[Receive] Data packet seq=15, length=8172, window[15,22]
+[Window Slide] base: 15 -> 16
 [Send] ACK packet ack=16, win=8
-[Simulation] DELAY packet seq=16 for 50ms
+[Simulation] DELAY packet seq=16 for 5ms
 [Receive] Data packet seq=16, length=8172, window[16,23]
 [Window Slide] base: 16 -> 17
 [Send] ACK packet ack=17, win=8
-[Simulation] DELAY packet seq=17 for 50ms
+[Simulation] DELAY packet seq=17 for 5ms
 [Receive] Data packet seq=17, length=8172, window[17,24]
 [Window Slide] base: 17 -> 18
 [Send] ACK packet ack=18, win=8
-[Simulation] DROPPED packet seq=18 (random=8, threshold=10)
-[Simulation] DELAY packet seq=19 for 50ms
-[Receive] Data packet seq=19, length=8172, window[18,25]
-[Send] ACK+SACK packet ack=18, SACK blocks=[19], win=8
-[Simulation] DELAY packet seq=20 for 50ms
-[Receive] Data packet seq=20, length=8172, window[18,25]
-[Send] ACK+SACK packet ack=18, SACK blocks=[19,20], win=8
-[Simulation] DELAY packet seq=18 for 50ms
+[Simulation] DELAY packet seq=18 for 5ms
 [Receive] Data packet seq=18, length=8172, window[18,25]
-[Window Slide] base: 18 -> 21
+[Window Slide] base: 18 -> 19
+[Send] ACK packet ack=19, win=8
+[Simulation] DELAY packet seq=19 for 5ms
+[Receive] Data packet seq=19, length=8172, window[19,26]
+[Window Slide] base: 19 -> 20
+[Send] ACK packet ack=20, win=8
+[Simulation] DELAY packet seq=20 for 5ms
+[Receive] Data packet seq=20, length=8172, window[20,27]
+[Window Slide] base: 20 -> 21
 [Send] ACK packet ack=21, win=8
-[Simulation] DELAY packet seq=21 for 50ms
+[Simulation] DELAY packet seq=21 for 5ms
 [Receive] Data packet seq=21, length=8172, window[21,28]
 [Window Slide] base: 21 -> 22
 [Send] ACK packet ack=22, win=8
-[Simulation] DELAY packet seq=22 for 50ms
+[Simulation] DELAY packet seq=22 for 5ms
 [Receive] Data packet seq=22, length=8172, window[22,29]
 [Window Slide] base: 22 -> 23
 [Send] ACK packet ack=23, win=8
-[Simulation] DROPPED packet seq=23 (random=4, threshold=10)
-[Simulation] DELAY packet seq=24 for 50ms
-[Receive] Data packet seq=24, length=8172, window[23,30]
-[Send] ACK+SACK packet ack=23, SACK blocks=[24], win=8
-[Simulation] DELAY packet seq=25 for 50ms
-[Receive] Data packet seq=25, length=8172, window[23,30]
-[Send] ACK+SACK packet ack=23, SACK blocks=[24,25], win=8
-[Simulation] DELAY packet seq=23 for 50ms
+[Simulation] DELAY packet seq=23 for 5ms
 [Receive] Data packet seq=23, length=8172, window[23,30]
-[Window Slide] base: 23 -> 26
+[Window Slide] base: 23 -> 24
+[Send] ACK packet ack=24, win=8
+[Simulation] DELAY packet seq=24 for 5ms
+[Receive] Data packet seq=24, length=8172, window[24,31]
+[Window Slide] base: 24 -> 25
+[Send] ACK packet ack=25, win=8
+[Simulation] DELAY packet seq=25 for 5ms
+[Receive] Data packet seq=25, length=8172, window[25,32]
+[Window Slide] base: 25 -> 26
 [Send] ACK packet ack=26, win=8
-[Simulation] DELAY packet seq=26 for 50ms
+[Simulation] DELAY packet seq=26 for 5ms
 [Receive] Data packet seq=26, length=8172, window[26,33]
 [Window Slide] base: 26 -> 27
 [Send] ACK packet ack=27, win=8
-[Simulation] DELAY packet seq=27 for 50ms
+[Simulation] DELAY packet seq=27 for 5ms
 [Receive] Data packet seq=27, length=8172, window[27,34]
 [Window Slide] base: 27 -> 28
 [Send] ACK packet ack=28, win=8
-[Simulation] DELAY packet seq=28 for 50ms
+[Simulation] DELAY packet seq=28 for 5ms
 [Receive] Data packet seq=28, length=8172, window[28,35]
 [Window Slide] base: 28 -> 29
 [Send] ACK packet ack=29, win=8
-[Simulation] DROPPED packet seq=29 (random=3, threshold=10)
-[Simulation] DELAY packet seq=30 for 50ms
-[Receive] Data packet seq=30, length=8172, window[29,36]
-[Send] ACK+SACK packet ack=29, SACK blocks=[30], win=8
-[Simulation] DELAY packet seq=31 for 50ms
-[Receive] Data packet seq=31, length=8172, window[29,36]
-[Send] ACK+SACK packet ack=29, SACK blocks=[30,31], win=8
-[Simulation] DELAY packet seq=29 for 50ms
+[Simulation] DELAY packet seq=29 for 5ms
 [Receive] Data packet seq=29, length=8172, window[29,36]
-[Window Slide] base: 29 -> 32
+[Window Slide] base: 29 -> 30
+[Send] ACK packet ack=30, win=8
+[Simulation] DELAY packet seq=30 for 5ms
+[Receive] Data packet seq=30, length=8172, window[30,37]
+[Window Slide] base: 30 -> 31
+[Send] ACK packet ack=31, win=8
+[Simulation] DELAY packet seq=31 for 5ms
+[Receive] Data packet seq=31, length=8172, window[31,38]
+[Window Slide] base: 31 -> 32
 [Send] ACK packet ack=32, win=8
-[Simulation] DELAY packet seq=32 for 50ms
+[Simulation] DELAY packet seq=32 for 5ms
 [Receive] Data packet seq=32, length=8172, window[32,39]
 [Window Slide] base: 32 -> 33
 [Send] ACK packet ack=33, win=8
-[Simulation] DELAY packet seq=33 for 50ms
+[Simulation] DELAY packet seq=33 for 5ms
 [Receive] Data packet seq=33, length=8172, window[33,40]
 [Window Slide] base: 33 -> 34
 [Send] ACK packet ack=34, win=8
-[Simulation] DELAY packet seq=34 for 50ms
+[Simulation] DELAY packet seq=34 for 5ms
 [Receive] Data packet seq=34, length=8172, window[34,41]
 [Window Slide] base: 34 -> 35
 [Send] ACK packet ack=35, win=8
-[Simulation] DELAY packet seq=35 for 50ms
+[Simulation] DELAY packet seq=35 for 5ms
 [Receive] Data packet seq=35, length=8172, window[35,42]
 [Window Slide] base: 35 -> 36
 [Send] ACK packet ack=36, win=8
-[Simulation] DELAY packet seq=36 for 50ms
+[Simulation] DELAY packet seq=36 for 5ms
 [Receive] Data packet seq=36, length=8172, window[36,43]
 [Window Slide] base: 36 -> 37
 [Send] ACK packet ack=37, win=8
-[Simulation] DELAY packet seq=37 for 50ms
+[Simulation] DROPPED packet seq=37 (random=1, threshold=5)
+[Simulation] DELAY packet seq=38 for 5ms
+[Receive] Data packet seq=38, length=8172, window[37,44]
+[Send] ACK+SACK packet ack=37, SACK blocks=[38], win=8
+[Simulation] DELAY packet seq=39 for 5ms
+[Receive] Data packet seq=39, length=8172, window[37,44]
+[Send] ACK+SACK packet ack=37, SACK blocks=[38,39], win=8
+[Simulation] DELAY packet seq=40 for 5ms
+[Receive] Data packet seq=40, length=8172, window[37,44]
+[Send] ACK+SACK packet ack=37, SACK blocks=[38,39,40], win=8
+[Simulation] DELAY packet seq=41 for 5ms
+[Receive] Data packet seq=41, length=8172, window[37,44]
+[Send] ACK+SACK packet ack=37, SACK blocks=[38,39,40,41], win=8
+[Simulation] DELAY packet seq=42 for 5ms
+[Receive] Data packet seq=42, length=8172, window[37,44]
+[Send] ACK+SACK packet ack=37, SACK blocks=[38,39,40,41], win=8
+[Simulation] DELAY packet seq=43 for 5ms
+[Receive] Data packet seq=43, length=8172, window[37,44]
+[Send] ACK+SACK packet ack=37, SACK blocks=[38,39,40,41], win=8
+[Simulation] DELAY packet seq=44 for 5ms
+[Receive] Data packet seq=44, length=8172, window[37,44]
+[Send] ACK+SACK packet ack=37, SACK blocks=[38,39,40,41], win=8
+[Simulation] DELAY packet seq=37 for 5ms
 [Receive] Data packet seq=37, length=8172, window[37,44]
-[Window Slide] base: 37 -> 38
-[Send] ACK packet ack=38, win=8
-[Simulation] DELAY packet seq=38 for 50ms
-[Receive] Data packet seq=38, length=8172, window[38,45]
-[Window Slide] base: 38 -> 39
-[Send] ACK packet ack=39, win=8
-[Simulation] DELAY packet seq=39 for 50ms
-[Receive] Data packet seq=39, length=8172, window[39,46]
-[Window Slide] base: 39 -> 40
-[Send] ACK packet ack=40, win=8
-[Simulation] DELAY packet seq=40 for 50ms
-[Receive] Data packet seq=40, length=8172, window[40,47]
-[Window Slide] base: 40 -> 41
-[Send] ACK packet ack=41, win=8
-[Simulation] DELAY packet seq=41 for 50ms
-[Receive] Data packet seq=41, length=8172, window[41,48]
-[Window Slide] base: 41 -> 42
-[Send] ACK packet ack=42, win=8
-[Simulation] DELAY packet seq=42 for 50ms
-[Receive] Data packet seq=42, length=8172, window[42,49]
-[Window Slide] base: 42 -> 43
-[Send] ACK packet ack=43, win=8
-[Simulation] DELAY packet seq=43 for 50ms
-[Receive] Data packet seq=43, length=8172, window[43,50]
-[Window Slide] base: 43 -> 44
-[Send] ACK packet ack=44, win=8
-[Simulation] DELAY packet seq=44 for 50ms
-[Receive] Data packet seq=44, length=8172, window[44,51]
-[Window Slide] base: 44 -> 45
+[Window Slide] base: 37 -> 45
 [Send] ACK packet ack=45, win=8
-[Simulation] DROPPED packet seq=45 (random=8, threshold=10)
-[Simulation] DELAY packet seq=46 for 50ms
-[Receive] Data packet seq=46, length=8172, window[45,52]
-[Send] ACK+SACK packet ack=45, SACK blocks=[46], win=8
-[Simulation] DELAY packet seq=47 for 50ms
-[Receive] Data packet seq=47, length=8172, window[45,52]
-[Send] ACK+SACK packet ack=45, SACK blocks=[46,47], win=8
-[Simulation] DELAY packet seq=48 for 50ms
-[Receive] Data packet seq=48, length=8172, window[45,52]
-[Send] ACK+SACK packet ack=45, SACK blocks=[46,47,48], win=8
-[Simulation] DELAY packet seq=49 for 50ms
-[Receive] Data packet seq=49, length=8172, window[45,52]
-[Send] ACK+SACK packet ack=45, SACK blocks=[46,47,48,49], win=8
-[Simulation] DELAY packet seq=50 for 50ms
-[Receive] Data packet seq=50, length=8172, window[45,52]
-[Send] ACK+SACK packet ack=45, SACK blocks=[46,47,48,49], win=8
-[Simulation] DELAY packet seq=45 for 50ms
+[Simulation] DELAY packet seq=45 for 5ms
 [Receive] Data packet seq=45, length=8172, window[45,52]
-[Window Slide] base: 45 -> 51
+[Window Slide] base: 45 -> 46
+[Send] ACK packet ack=46, win=8
+[Simulation] DELAY packet seq=46 for 5ms
+[Receive] Data packet seq=46, length=8172, window[46,53]
+[Window Slide] base: 46 -> 47
+[Send] ACK packet ack=47, win=8
+[Simulation] DELAY packet seq=47 for 5ms
+[Receive] Data packet seq=47, length=8172, window[47,54]
+[Window Slide] base: 47 -> 48
+[Send] ACK packet ack=48, win=8
+[Simulation] DELAY packet seq=48 for 5ms
+[Receive] Data packet seq=48, length=8172, window[48,55]
+[Window Slide] base: 48 -> 49
+[Send] ACK packet ack=49, win=8
+[Simulation] DELAY packet seq=49 for 5ms
+[Receive] Data packet seq=49, length=8172, window[49,56]
+[Window Slide] base: 49 -> 50
+[Send] ACK packet ack=50, win=8
+[Simulation] DELAY packet seq=50 for 5ms
+[Receive] Data packet seq=50, length=8172, window[50,57]
+[Window Slide] base: 50 -> 51
 [Send] ACK packet ack=51, win=8
-[Simulation] DELAY packet seq=51 for 50ms
+[Simulation] DELAY packet seq=51 for 5ms
 [Receive] Data packet seq=51, length=8172, window[51,58]
 [Window Slide] base: 51 -> 52
 [Send] ACK packet ack=52, win=8
-[Simulation] DELAY packet seq=52 for 50ms
+[Simulation] DELAY packet seq=52 for 5ms
 [Receive] Data packet seq=52, length=8172, window[52,59]
 [Window Slide] base: 52 -> 53
 [Send] ACK packet ack=53, win=8
-[Simulation] DELAY packet seq=53 for 50ms
+[Simulation] DELAY packet seq=53 for 5ms
 [Receive] Data packet seq=53, length=8172, window[53,60]
 [Window Slide] base: 53 -> 54
 [Send] ACK packet ack=54, win=8
-[Simulation] DELAY packet seq=54 for 50ms
+[Simulation] DELAY packet seq=54 for 5ms
 [Receive] Data packet seq=54, length=8172, window[54,61]
 [Window Slide] base: 54 -> 55
 [Send] ACK packet ack=55, win=8
-[Simulation] DELAY packet seq=55 for 50ms
+[Simulation] DELAY packet seq=55 for 5ms
 [Receive] Data packet seq=55, length=8172, window[55,62]
 [Window Slide] base: 55 -> 56
 [Send] ACK packet ack=56, win=8
-[Simulation] DELAY packet seq=56 for 50ms
+[Simulation] DELAY packet seq=56 for 5ms
 [Receive] Data packet seq=56, length=8172, window[56,63]
 [Window Slide] base: 56 -> 57
 [Send] ACK packet ack=57, win=8
-[Simulation] DROPPED packet seq=57 (random=3, threshold=10)
-[Simulation] DELAY packet seq=58 for 50ms
-[Receive] Data packet seq=58, length=8172, window[57,64]
-[Send] ACK+SACK packet ack=57, SACK blocks=[58], win=8
-[Simulation] DELAY packet seq=59 for 50ms
-[Receive] Data packet seq=59, length=8172, window[57,64]
-[Send] ACK+SACK packet ack=57, SACK blocks=[58,59], win=8
-[Simulation] DELAY packet seq=60 for 50ms
-[Receive] Data packet seq=60, length=8172, window[57,64]
-[Send] ACK+SACK packet ack=57, SACK blocks=[58,59,60], win=8
-[Simulation] DELAY packet seq=57 for 50ms
+[Simulation] DELAY packet seq=57 for 5ms
 [Receive] Data packet seq=57, length=8172, window[57,64]
-[Window Slide] base: 57 -> 61
+[Window Slide] base: 57 -> 58
+[Send] ACK packet ack=58, win=8
+[Simulation] DELAY packet seq=58 for 5ms
+[Receive] Data packet seq=58, length=8172, window[58,65]
+[Window Slide] base: 58 -> 59
+[Send] ACK packet ack=59, win=8
+[Simulation] DELAY packet seq=59 for 5ms
+[Receive] Data packet seq=59, length=8172, window[59,66]
+[Window Slide] base: 59 -> 60
+[Send] ACK packet ack=60, win=8
+[Simulation] DELAY packet seq=60 for 5ms
+[Receive] Data packet seq=60, length=8172, window[60,67]
+[Window Slide] base: 60 -> 61
 [Send] ACK packet ack=61, win=8
-[Simulation] DELAY packet seq=61 for 50ms
+[Simulation] DELAY packet seq=61 for 5ms
 [Receive] Data packet seq=61, length=8172, window[61,68]
 [Window Slide] base: 61 -> 62
 [Send] ACK packet ack=62, win=8
-[Simulation] DELAY packet seq=62 for 50ms
+[Simulation] DELAY packet seq=62 for 5ms
 [Receive] Data packet seq=62, length=8172, window[62,69]
 [Window Slide] base: 62 -> 63
 [Send] ACK packet ack=63, win=8
-[Simulation] DROPPED packet seq=63 (random=2, threshold=10)
-[Simulation] DELAY packet seq=64 for 50ms
-[Receive] Data packet seq=64, length=8172, window[63,70]
-[Send] ACK+SACK packet ack=63, SACK blocks=[64], win=8
-[Simulation] DELAY packet seq=65 for 50ms
-[Receive] Data packet seq=65, length=8172, window[63,70]
-[Send] ACK+SACK packet ack=63, SACK blocks=[64,65], win=8
-[Simulation] DROPPED packet seq=63 (random=1, threshold=10)
-[Simulation] DELAY packet seq=63 for 50ms
+[Simulation] DELAY packet seq=63 for 5ms
 [Receive] Data packet seq=63, length=8172, window[63,70]
-[Window Slide] base: 63 -> 66
+[Window Slide] base: 63 -> 64
+[Send] ACK packet ack=64, win=8
+[Simulation] DELAY packet seq=64 for 5ms
+[Receive] Data packet seq=64, length=8172, window[64,71]
+[Window Slide] base: 64 -> 65
+[Send] ACK packet ack=65, win=8
+[Simulation] DELAY packet seq=65 for 5ms
+[Receive] Data packet seq=65, length=8172, window[65,72]
+[Window Slide] base: 65 -> 66
 [Send] ACK packet ack=66, win=8
-[Simulation] DELAY packet seq=66 for 50ms
+[Simulation] DELAY packet seq=66 for 5ms
 [Receive] Data packet seq=66, length=8172, window[66,73]
 [Window Slide] base: 66 -> 67
 [Send] ACK packet ack=67, win=8
-[Simulation] DROPPED packet seq=67 (random=1, threshold=10)
-[Simulation] DROPPED packet seq=68 (random=0, threshold=10)
-[Simulation] DELAY packet seq=69 for 50ms
-[Receive] Data packet seq=69, length=8172, window[67,74]
-[Send] ACK+SACK packet ack=67, SACK blocks=[69], win=8
-[Simulation] DELAY packet seq=67 for 50ms
+[Simulation] DELAY packet seq=67 for 5ms
 [Receive] Data packet seq=67, length=8172, window[67,74]
 [Window Slide] base: 67 -> 68
-[Send] ACK+SACK packet ack=68, SACK blocks=[69], win=8
-[Simulation] DELAY packet seq=68 for 50ms
+[Send] ACK packet ack=68, win=8
+[Simulation] DELAY packet seq=68 for 5ms
 [Receive] Data packet seq=68, length=8172, window[68,75]
-[Window Slide] base: 68 -> 70
+[Window Slide] base: 68 -> 69
+[Send] ACK packet ack=69, win=8
+[Simulation] DELAY packet seq=69 for 5ms
+[Receive] Data packet seq=69, length=8172, window[69,76]
+[Window Slide] base: 69 -> 70
 [Send] ACK packet ack=70, win=8
-[Simulation] DELAY packet seq=70 for 50ms
+[Simulation] DELAY packet seq=70 for 5ms
 [Receive] Data packet seq=70, length=8172, window[70,77]
 [Window Slide] base: 70 -> 71
 [Send] ACK packet ack=71, win=8
-[Simulation] DROPPED packet seq=71 (random=5, threshold=10)
-[Simulation] DELAY packet seq=72 for 50ms
-[Receive] Data packet seq=72, length=8172, window[71,78]
-[Send] ACK+SACK packet ack=71, SACK blocks=[72], win=8
-[Simulation] DELAY packet seq=71 for 50ms
+[Simulation] DELAY packet seq=71 for 5ms
 [Receive] Data packet seq=71, length=8172, window[71,78]
-[Window Slide] base: 71 -> 73
+[Window Slide] base: 71 -> 72
+[Send] ACK packet ack=72, win=8
+[Simulation] DELAY packet seq=72 for 5ms
+[Receive] Data packet seq=72, length=8172, window[72,79]
+[Window Slide] base: 72 -> 73
 [Send] ACK packet ack=73, win=8
-[Simulation] DELAY packet seq=73 for 50ms
+[Simulation] DELAY packet seq=73 for 5ms
 [Receive] Data packet seq=73, length=8172, window[73,80]
 [Window Slide] base: 73 -> 74
 [Send] ACK packet ack=74, win=8
-[Simulation] DELAY packet seq=74 for 50ms
+[Simulation] DELAY packet seq=74 for 5ms
 [Receive] Data packet seq=74, length=8172, window[74,81]
 [Window Slide] base: 74 -> 75
 [Send] ACK packet ack=75, win=8
-[Simulation] DELAY packet seq=75 for 50ms
+[Simulation] DELAY packet seq=75 for 5ms
 [Receive] Data packet seq=75, length=8172, window[75,82]
 [Window Slide] base: 75 -> 76
 [Send] ACK packet ack=76, win=8
-[Simulation] DELAY packet seq=76 for 50ms
+[Simulation] DELAY packet seq=76 for 5ms
 [Receive] Data packet seq=76, length=8172, window[76,83]
 [Window Slide] base: 76 -> 77
 [Send] ACK packet ack=77, win=8
-[Simulation] DELAY packet seq=77 for 50ms
+[Simulation] DELAY packet seq=77 for 5ms
 [Receive] Data packet seq=77, length=8172, window[77,84]
 [Window Slide] base: 77 -> 78
 [Send] ACK packet ack=78, win=8
-[Simulation] DELAY packet seq=78 for 50ms
+[Simulation] DELAY packet seq=78 for 5ms
 [Receive] Data packet seq=78, length=8172, window[78,85]
 [Window Slide] base: 78 -> 79
 [Send] ACK packet ack=79, win=8
-[Simulation] DROPPED packet seq=79 (random=3, threshold=10)
-[Simulation] DELAY packet seq=80 for 50ms
-[Receive] Data packet seq=80, length=8172, window[79,86]
-[Send] ACK+SACK packet ack=79, SACK blocks=[80], win=8
-[Simulation] DELAY packet seq=81 for 50ms
-[Receive] Data packet seq=81, length=8172, window[79,86]
-[Send] ACK+SACK packet ack=79, SACK blocks=[80,81], win=8
-[Simulation] DELAY packet seq=82 for 50ms
-[Receive] Data packet seq=82, length=8172, window[79,86]
-[Send] ACK+SACK packet ack=79, SACK blocks=[80,81,82], win=8
-[Simulation] DELAY packet seq=79 for 50ms
+[Simulation] DELAY packet seq=79 for 5ms
 [Receive] Data packet seq=79, length=8172, window[79,86]
-[Window Slide] base: 79 -> 83
+[Window Slide] base: 79 -> 80
+[Send] ACK packet ack=80, win=8
+[Simulation] DELAY packet seq=80 for 5ms
+[Receive] Data packet seq=80, length=8172, window[80,87]
+[Window Slide] base: 80 -> 81
+[Send] ACK packet ack=81, win=8
+[Simulation] DELAY packet seq=81 for 5ms
+[Receive] Data packet seq=81, length=8172, window[81,88]
+[Window Slide] base: 81 -> 82
+[Send] ACK packet ack=82, win=8
+[Simulation] DELAY packet seq=82 for 5ms
+[Receive] Data packet seq=82, length=8172, window[82,89]
+[Window Slide] base: 82 -> 83
 [Send] ACK packet ack=83, win=8
-[Simulation] DELAY packet seq=83 for 50ms
+[Simulation] DELAY packet seq=83 for 5ms
 [Receive] Data packet seq=83, length=8172, window[83,90]
 [Window Slide] base: 83 -> 84
 [Send] ACK packet ack=84, win=8
-[Simulation] DELAY packet seq=84 for 50ms
+[Simulation] DELAY packet seq=84 for 5ms
 [Receive] Data packet seq=84, length=8172, window[84,91]
 [Window Slide] base: 84 -> 85
 [Send] ACK packet ack=85, win=8
-[Simulation] DELAY packet seq=85 for 50ms
+[Simulation] DELAY packet seq=85 for 5ms
 [Receive] Data packet seq=85, length=8172, window[85,92]
 [Window Slide] base: 85 -> 86
 [Send] ACK packet ack=86, win=8
-[Simulation] DELAY packet seq=86 for 50ms
+[Simulation] DELAY packet seq=86 for 5ms
 [Receive] Data packet seq=86, length=8172, window[86,93]
 [Window Slide] base: 86 -> 87
 [Send] ACK packet ack=87, win=8
-[Simulation] DELAY packet seq=87 for 50ms
+[Simulation] DELAY packet seq=87 for 5ms
 [Receive] Data packet seq=87, length=8172, window[87,94]
 [Window Slide] base: 87 -> 88
 [Send] ACK packet ack=88, win=8
-[Simulation] DELAY packet seq=88 for 50ms
+[Simulation] DELAY packet seq=88 for 5ms
 [Receive] Data packet seq=88, length=8172, window[88,95]
 [Window Slide] base: 88 -> 89
 [Send] ACK packet ack=89, win=8
-[Simulation] DELAY packet seq=89 for 50ms
+[Simulation] DELAY packet seq=89 for 5ms
 [Receive] Data packet seq=89, length=8172, window[89,96]
 [Window Slide] base: 89 -> 90
 [Send] ACK packet ack=90, win=8
-[Simulation] DELAY packet seq=90 for 50ms
+[Simulation] DELAY packet seq=90 for 5ms
 [Receive] Data packet seq=90, length=8172, window[90,97]
 [Window Slide] base: 90 -> 91
 [Send] ACK packet ack=91, win=8
-[Simulation] DELAY packet seq=91 for 50ms
+[Simulation] DELAY packet seq=91 for 5ms
 [Receive] Data packet seq=91, length=8172, window[91,98]
 [Window Slide] base: 91 -> 92
 [Send] ACK packet ack=92, win=8
-[Simulation] DELAY packet seq=92 for 50ms
+[Simulation] DELAY packet seq=92 for 5ms
 [Receive] Data packet seq=92, length=8172, window[92,99]
 [Window Slide] base: 92 -> 93
 [Send] ACK packet ack=93, win=8
-[Simulation] DELAY packet seq=93 for 50ms
+[Simulation] DELAY packet seq=93 for 5ms
 [Receive] Data packet seq=93, length=8172, window[93,100]
 [Window Slide] base: 93 -> 94
 [Send] ACK packet ack=94, win=8
-[Simulation] DELAY packet seq=94 for 50ms
+[Simulation] DELAY packet seq=94 for 5ms
 [Receive] Data packet seq=94, length=8172, window[94,101]
 [Window Slide] base: 94 -> 95
 [Send] ACK packet ack=95, win=8
-[Simulation] DELAY packet seq=95 for 50ms
+[Simulation] DELAY packet seq=95 for 5ms
 [Receive] Data packet seq=95, length=8172, window[95,102]
 [Window Slide] base: 95 -> 96
 [Send] ACK packet ack=96, win=8
-[Simulation] DELAY packet seq=96 for 50ms
+[Simulation] DELAY packet seq=96 for 5ms
 [Receive] Data packet seq=96, length=8172, window[96,103]
 [Window Slide] base: 96 -> 97
 [Send] ACK packet ack=97, win=8
-[Simulation] DELAY packet seq=97 for 50ms
+[Simulation] DELAY packet seq=97 for 5ms
 [Receive] Data packet seq=97, length=8172, window[97,104]
 [Window Slide] base: 97 -> 98
 [Send] ACK packet ack=98, win=8
-[Simulation] DELAY packet seq=98 for 50ms
+[Simulation] DELAY packet seq=98 for 5ms
 [Receive] Data packet seq=98, length=8172, window[98,105]
 [Window Slide] base: 98 -> 99
 [Send] ACK packet ack=99, win=8
-[Simulation] DELAY packet seq=99 for 50ms
+[Simulation] DELAY packet seq=99 for 5ms
 [Receive] Data packet seq=99, length=8172, window[99,106]
 [Window Slide] base: 99 -> 100
 [Send] ACK packet ack=100, win=8
-[Simulation] DELAY packet seq=100 for 50ms
+[Simulation] DELAY packet seq=100 for 5ms
 [Receive] Data packet seq=100, length=8172, window[100,107]
 [Window Slide] base: 100 -> 101
 [Send] ACK packet ack=101, win=8
-[Simulation] DROPPED packet seq=101 (random=8, threshold=10)
-[Simulation] DELAY packet seq=102 for 50ms
-[Receive] Data packet seq=102, length=8172, window[101,108]
-[Send] ACK+SACK packet ack=101, SACK blocks=[102], win=8
-[Simulation] DELAY packet seq=103 for 50ms
+[Simulation] DROPPED packet seq=101 (random=3, threshold=5)
+[Simulation] DROPPED packet seq=102 (random=2, threshold=5)
+[Simulation] DELAY packet seq=103 for 5ms
 [Receive] Data packet seq=103, length=8172, window[101,108]
-[Send] ACK+SACK packet ack=101, SACK blocks=[102,103], win=8
-[Simulation] DELAY packet seq=104 for 50ms
+[Send] ACK+SACK packet ack=101, SACK blocks=[103], win=8
+[Simulation] DELAY packet seq=104 for 5ms
 [Receive] Data packet seq=104, length=8172, window[101,108]
-[Send] ACK+SACK packet ack=101, SACK blocks=[102,103,104], win=8
-[Simulation] DELAY packet seq=105 for 50ms
+[Send] ACK+SACK packet ack=101, SACK blocks=[103,104], win=8
+[Simulation] DELAY packet seq=105 for 5ms
 [Receive] Data packet seq=105, length=8172, window[101,108]
-[Send] ACK+SACK packet ack=101, SACK blocks=[102,103,104,105], win=8
-[Simulation] DELAY packet seq=106 for 50ms
+[Send] ACK+SACK packet ack=101, SACK blocks=[103,104,105], win=8
+[Simulation] DELAY packet seq=106 for 5ms
 [Receive] Data packet seq=106, length=8172, window[101,108]
-[Send] ACK+SACK packet ack=101, SACK blocks=[102,103,104,105], win=8
-[Simulation] DELAY packet seq=101 for 50ms
+[Send] ACK+SACK packet ack=101, SACK blocks=[103,104,105,106], win=8
+[Simulation] DELAY packet seq=107 for 5ms
+[Receive] Data packet seq=107, length=8172, window[101,108]
+[Send] ACK+SACK packet ack=101, SACK blocks=[103,104,105,106], win=8
+[Simulation] DELAY packet seq=108 for 5ms
+[Receive] Data packet seq=108, length=8172, window[101,108]
+[Send] ACK+SACK packet ack=101, SACK blocks=[103,104,105,106], win=8
+[Simulation] DELAY packet seq=101 for 5ms
 [Receive] Data packet seq=101, length=8172, window[101,108]
-[Window Slide] base: 101 -> 107
-[Send] ACK packet ack=107, win=8
-[Simulation] DELAY packet seq=107 for 50ms
-[Receive] Data packet seq=107, length=8172, window[107,114]
-[Window Slide] base: 107 -> 108
-[Send] ACK packet ack=108, win=8
-[Simulation] DELAY packet seq=108 for 50ms
-[Receive] Data packet seq=108, length=8172, window[108,115]
-[Window Slide] base: 108 -> 109
-[Send] ACK packet ack=109, win=8
-[Simulation] DELAY packet seq=109 for 50ms
-[Receive] Data packet seq=109, length=8172, window[109,116]
-[Window Slide] base: 109 -> 110
+[Window Slide] base: 101 -> 102
+[Send] ACK+SACK packet ack=102, SACK blocks=[103,104,105,106], win=8
+[Simulation] DELAY packet seq=109 for 5ms
+[Receive] Data packet seq=109, length=8172, window[102,109]
+[Send] ACK+SACK packet ack=102, SACK blocks=[103,104,105,106], win=8
+[Simulation] DELAY packet seq=102 for 5ms
+[Receive] Data packet seq=102, length=8172, window[102,109]
+[Window Slide] base: 102 -> 110
 [Send] ACK packet ack=110, win=8
-[Simulation] DELAY packet seq=110 for 50ms
+[Simulation] DELAY packet seq=110 for 5ms
 [Receive] Data packet seq=110, length=8172, window[110,117]
 [Window Slide] base: 110 -> 111
 [Send] ACK packet ack=111, win=8
-[Simulation] DELAY packet seq=111 for 50ms
+[Simulation] DELAY packet seq=111 for 5ms
 [Receive] Data packet seq=111, length=8172, window[111,118]
 [Window Slide] base: 111 -> 112
 [Send] ACK packet ack=112, win=8
-[Simulation] DELAY packet seq=112 for 50ms
+[Simulation] DELAY packet seq=112 for 5ms
 [Receive] Data packet seq=112, length=8172, window[112,119]
 [Window Slide] base: 112 -> 113
 [Send] ACK packet ack=113, win=8
-[Simulation] DELAY packet seq=113 for 50ms
+[Simulation] DELAY packet seq=113 for 5ms
 [Receive] Data packet seq=113, length=8172, window[113,120]
 [Window Slide] base: 113 -> 114
 [Send] ACK packet ack=114, win=8
-[Simulation] DELAY packet seq=114 for 50ms
+[Simulation] DELAY packet seq=114 for 5ms
 [Receive] Data packet seq=114, length=8172, window[114,121]
 [Window Slide] base: 114 -> 115
 [Send] ACK packet ack=115, win=8
-[Simulation] DELAY packet seq=115 for 50ms
+[Simulation] DELAY packet seq=115 for 5ms
 [Receive] Data packet seq=115, length=8172, window[115,122]
 [Window Slide] base: 115 -> 116
 [Send] ACK packet ack=116, win=8
-[Simulation] DELAY packet seq=116 for 50ms
+[Simulation] DROPPED packet seq=116 (random=0, threshold=5)
+[Simulation] DELAY packet seq=117 for 5ms
+[Receive] Data packet seq=117, length=8172, window[116,123]
+[Send] ACK+SACK packet ack=116, SACK blocks=[117], win=8
+[Simulation] DELAY packet seq=118 for 5ms
+[Receive] Data packet seq=118, length=8172, window[116,123]
+[Send] ACK+SACK packet ack=116, SACK blocks=[117,118], win=8
+[Simulation] DELAY packet seq=119 for 5ms
+[Receive] Data packet seq=119, length=8172, window[116,123]
+[Send] ACK+SACK packet ack=116, SACK blocks=[117,118,119], win=8
+[Simulation] DELAY packet seq=120 for 5ms
+[Receive] Data packet seq=120, length=8172, window[116,123]
+[Send] ACK+SACK packet ack=116, SACK blocks=[117,118,119,120], win=8
+[Simulation] DELAY packet seq=116 for 5ms
 [Receive] Data packet seq=116, length=8172, window[116,123]
-[Window Slide] base: 116 -> 117
-[Send] ACK packet ack=117, win=8
-[Simulation] DELAY packet seq=117 for 50ms
-[Receive] Data packet seq=117, length=8172, window[117,124]
-[Window Slide] base: 117 -> 118
-[Send] ACK packet ack=118, win=8
-[Simulation] DELAY packet seq=118 for 50ms
-[Receive] Data packet seq=118, length=8172, window[118,125]
-[Window Slide] base: 118 -> 119
-[Send] ACK packet ack=119, win=8
-[Simulation] DELAY packet seq=119 for 50ms
-[Receive] Data packet seq=119, length=8172, window[119,126]
-[Window Slide] base: 119 -> 120
-[Send] ACK packet ack=120, win=8
-[Simulation] DELAY packet seq=120 for 50ms
-[Receive] Data packet seq=120, length=8172, window[120,127]
-[Window Slide] base: 120 -> 121
+[Window Slide] base: 116 -> 121
 [Send] ACK packet ack=121, win=8
-[Simulation] DELAY packet seq=121 for 50ms
+[Simulation] DELAY packet seq=121 for 5ms
 [Receive] Data packet seq=121, length=8172, window[121,128]
 [Window Slide] base: 121 -> 122
 [Send] ACK packet ack=122, win=8
-[Simulation] DELAY packet seq=122 for 50ms
+[Simulation] DELAY packet seq=122 for 5ms
 [Receive] Data packet seq=122, length=8172, window[122,129]
 [Window Slide] base: 122 -> 123
 [Send] ACK packet ack=123, win=8
-[Simulation] DELAY packet seq=123 for 50ms
+[Simulation] DELAY packet seq=123 for 5ms
 [Receive] Data packet seq=123, length=8172, window[123,130]
 [Window Slide] base: 123 -> 124
 [Send] ACK packet ack=124, win=8
-[Simulation] DELAY packet seq=124 for 50ms
+[Simulation] DELAY packet seq=124 for 5ms
 [Receive] Data packet seq=124, length=8172, window[124,131]
 [Window Slide] base: 124 -> 125
 [Send] ACK packet ack=125, win=8
-[Simulation] DROPPED packet seq=125 (random=4, threshold=10)
-[Simulation] DROPPED packet seq=126 (random=7, threshold=10)
-[Simulation] DELAY packet seq=127 for 50ms
-[Receive] Data packet seq=127, length=8172, window[125,132]
-[Send] ACK+SACK packet ack=125, SACK blocks=[127], win=8
-[Simulation] DELAY packet seq=128 for 50ms
-[Receive] Data packet seq=128, length=8172, window[125,132]
-[Send] ACK+SACK packet ack=125, SACK blocks=[127,128], win=8
-[Simulation] DELAY packet seq=129 for 50ms
-[Receive] Data packet seq=129, length=8172, window[125,132]
-[Send] ACK+SACK packet ack=125, SACK blocks=[127,128,129], win=8
-[Simulation] DELAY packet seq=130 for 50ms
-[Receive] Data packet seq=130, length=8172, window[125,132]
-[Send] ACK+SACK packet ack=125, SACK blocks=[127,128,129,130], win=8
-[Simulation] DELAY packet seq=131 for 50ms
-[Receive] Data packet seq=131, length=8172, window[125,132]
-[Send] ACK+SACK packet ack=125, SACK blocks=[127,128,129,130], win=8
-[Simulation] DROPPED packet seq=125 (random=5, threshold=10)
-[Simulation] DELAY packet seq=126 for 50ms
-[Receive] Data packet seq=126, length=8172, window[125,132]
-[Send] ACK+SACK packet ack=125, SACK blocks=[126,127,128,129], win=8
-[Simulation] DROPPED packet seq=131 (random=6, threshold=10)
-[Simulation] DELAY packet seq=125 for 50ms
+[Simulation] DELAY packet seq=125 for 5ms
 [Receive] Data packet seq=125, length=8172, window[125,132]
-[Window Slide] base: 125 -> 132
+[Window Slide] base: 125 -> 126
+[Send] ACK packet ack=126, win=8
+[Simulation] DELAY packet seq=126 for 5ms
+[Receive] Data packet seq=126, length=8172, window[126,133]
+[Window Slide] base: 126 -> 127
+[Send] ACK packet ack=127, win=8
+[Simulation] DELAY packet seq=127 for 5ms
+[Receive] Data packet seq=127, length=8172, window[127,134]
+[Window Slide] base: 127 -> 128
+[Send] ACK packet ack=128, win=8
+[Simulation] DELAY packet seq=128 for 5ms
+[Receive] Data packet seq=128, length=8172, window[128,135]
+[Window Slide] base: 128 -> 129
+[Send] ACK packet ack=129, win=8
+[Simulation] DELAY packet seq=129 for 5ms
+[Receive] Data packet seq=129, length=8172, window[129,136]
+[Window Slide] base: 129 -> 130
+[Send] ACK packet ack=130, win=8
+[Simulation] DELAY packet seq=130 for 5ms
+[Receive] Data packet seq=130, length=8172, window[130,137]
+[Window Slide] base: 130 -> 131
+[Send] ACK packet ack=131, win=8
+[Simulation] DELAY packet seq=131 for 5ms
+[Receive] Data packet seq=131, length=8172, window[131,138]
+[Window Slide] base: 131 -> 132
 [Send] ACK packet ack=132, win=8
-[Simulation] DELAY packet seq=132 for 50ms
+[Simulation] DELAY packet seq=132 for 5ms
 [Receive] Data packet seq=132, length=8172, window[132,139]
 [Window Slide] base: 132 -> 133
 [Send] ACK packet ack=133, win=8
-[Simulation] DELAY packet seq=133 for 50ms
+[Simulation] DELAY packet seq=133 for 5ms
 [Receive] Data packet seq=133, length=8172, window[133,140]
 [Window Slide] base: 133 -> 134
 [Send] ACK packet ack=134, win=8
-[Simulation] DELAY packet seq=134 for 50ms
+[Simulation] DELAY packet seq=134 for 5ms
 [Receive] Data packet seq=134, length=8172, window[134,141]
 [Window Slide] base: 134 -> 135
 [Send] ACK packet ack=135, win=8
-[Simulation] DELAY packet seq=135 for 50ms
+[Simulation] DELAY packet seq=135 for 5ms
 [Receive] Data packet seq=135, length=8172, window[135,142]
 [Window Slide] base: 135 -> 136
 [Send] ACK packet ack=136, win=8
-[Simulation] DELAY packet seq=136 for 50ms
+[Simulation] DELAY packet seq=136 for 5ms
 [Receive] Data packet seq=136, length=8172, window[136,143]
 [Window Slide] base: 136 -> 137
 [Send] ACK packet ack=137, win=8
-[Simulation] DELAY packet seq=137 for 50ms
+[Simulation] DELAY packet seq=137 for 5ms
 [Receive] Data packet seq=137, length=8172, window[137,144]
 [Window Slide] base: 137 -> 138
 [Send] ACK packet ack=138, win=8
-[Simulation] DELAY packet seq=138 for 50ms
+[Simulation] DELAY packet seq=138 for 5ms
 [Receive] Data packet seq=138, length=8172, window[138,145]
 [Window Slide] base: 138 -> 139
 [Send] ACK packet ack=139, win=8
-[Simulation] DELAY packet seq=139 for 50ms
+[Simulation] DELAY packet seq=139 for 5ms
 [Receive] Data packet seq=139, length=8172, window[139,146]
 [Window Slide] base: 139 -> 140
 [Send] ACK packet ack=140, win=8
-[Simulation] DELAY packet seq=140 for 50ms
+[Simulation] DELAY packet seq=140 for 5ms
 [Receive] Data packet seq=140, length=8172, window[140,147]
 [Window Slide] base: 140 -> 141
 [Send] ACK packet ack=141, win=8
-[Simulation] DELAY packet seq=141 for 50ms
+[Simulation] DELAY packet seq=141 for 5ms
 [Receive] Data packet seq=141, length=8172, window[141,148]
 [Window Slide] base: 141 -> 142
 [Send] ACK packet ack=142, win=8
-[Simulation] DELAY packet seq=142 for 50ms
+[Simulation] DELAY packet seq=142 for 5ms
 [Receive] Data packet seq=142, length=8172, window[142,149]
 [Window Slide] base: 142 -> 143
 [Send] ACK packet ack=143, win=8
-[Simulation] DELAY packet seq=143 for 50ms
+[Simulation] DROPPED packet seq=143 (random=2, threshold=5)
+[Simulation] DELAY packet seq=144 for 5ms
+[Receive] Data packet seq=144, length=8172, window[143,150]
+[Send] ACK+SACK packet ack=143, SACK blocks=[144], win=8
+[Simulation] DELAY packet seq=145 for 5ms
+[Receive] Data packet seq=145, length=8172, window[143,150]
+[Send] ACK+SACK packet ack=143, SACK blocks=[144,145], win=8
+[Simulation] DELAY packet seq=146 for 5ms
+[Receive] Data packet seq=146, length=8172, window[143,150]
+[Send] ACK+SACK packet ack=143, SACK blocks=[144,145,146], win=8
+[Simulation] DELAY packet seq=147 for 5ms
+[Receive] Data packet seq=147, length=8172, window[143,150]
+[Send] ACK+SACK packet ack=143, SACK blocks=[144,145,146,147], win=8
+[Simulation] DELAY packet seq=148 for 5ms
+[Receive] Data packet seq=148, length=8172, window[143,150]
+[Send] ACK+SACK packet ack=143, SACK blocks=[144,145,146,147], win=8
+[Simulation] DELAY packet seq=149 for 5ms
+[Receive] Data packet seq=149, length=8172, window[143,150]
+[Send] ACK+SACK packet ack=143, SACK blocks=[144,145,146,147], win=8
+[Simulation] DELAY packet seq=143 for 5ms
 [Receive] Data packet seq=143, length=8172, window[143,150]
-[Window Slide] base: 143 -> 144
-[Send] ACK packet ack=144, win=8
-[Simulation] DROPPED packet seq=144 (random=4, threshold=10)
-[Simulation] DELAY packet seq=145 for 50ms
-[Receive] Data packet seq=145, length=8172, window[144,151]
-[Send] ACK+SACK packet ack=144, SACK blocks=[145], win=8
-[Simulation] DELAY packet seq=146 for 50ms
-[Receive] Data packet seq=146, length=8172, window[144,151]
-[Send] ACK+SACK packet ack=144, SACK blocks=[145,146], win=8
-[Simulation] DELAY packet seq=147 for 50ms
-[Receive] Data packet seq=147, length=8172, window[144,151]
-[Send] ACK+SACK packet ack=144, SACK blocks=[145,146,147], win=8
-[Simulation] DELAY packet seq=148 for 50ms
-[Receive] Data packet seq=148, length=8172, window[144,151]
-[Send] ACK+SACK packet ack=144, SACK blocks=[145,146,147,148], win=8
-[Simulation] DELAY packet seq=144 for 50ms
-[Receive] Data packet seq=144, length=8172, window[144,151]
-[Window Slide] base: 144 -> 149
-[Send] ACK packet ack=149, win=8
-[Simulation] DELAY packet seq=149 for 50ms
-[Receive] Data packet seq=149, length=8172, window[149,156]
-[Window Slide] base: 149 -> 150
+[Window Slide] base: 143 -> 150
 [Send] ACK packet ack=150, win=8
-[Simulation] DELAY packet seq=150 for 50ms
+[Simulation] DELAY packet seq=150 for 5ms
 [Receive] Data packet seq=150, length=8172, window[150,157]
 [Window Slide] base: 150 -> 151
 [Send] ACK packet ack=151, win=8
-[Simulation] DELAY packet seq=151 for 50ms
+[Simulation] DELAY packet seq=151 for 5ms
 [Receive] Data packet seq=151, length=8172, window[151,158]
 [Window Slide] base: 151 -> 152
 [Send] ACK packet ack=152, win=8
-[Simulation] DELAY packet seq=152 for 50ms
+[Simulation] DELAY packet seq=152 for 5ms
 [Receive] Data packet seq=152, length=8172, window[152,159]
 [Window Slide] base: 152 -> 153
 [Send] ACK packet ack=153, win=8
-[Simulation] DELAY packet seq=153 for 50ms
+[Simulation] DELAY packet seq=153 for 5ms
 [Receive] Data packet seq=153, length=8172, window[153,160]
 [Window Slide] base: 153 -> 154
 [Send] ACK packet ack=154, win=8
-[Simulation] DELAY packet seq=154 for 50ms
+[Simulation] DELAY packet seq=154 for 5ms
 [Receive] Data packet seq=154, length=8172, window[154,161]
 [Window Slide] base: 154 -> 155
 [Send] ACK packet ack=155, win=8
-[Simulation] DELAY packet seq=155 for 50ms
+[Simulation] DELAY packet seq=155 for 5ms
 [Receive] Data packet seq=155, length=8172, window[155,162]
 [Window Slide] base: 155 -> 156
 [Send] ACK packet ack=156, win=8
-[Simulation] DELAY packet seq=156 for 50ms
+[Simulation] DELAY packet seq=156 for 5ms
 [Receive] Data packet seq=156, length=8172, window[156,163]
 [Window Slide] base: 156 -> 157
 [Send] ACK packet ack=157, win=8
-[Simulation] DELAY packet seq=157 for 50ms
+[Simulation] DELAY packet seq=157 for 5ms
 [Receive] Data packet seq=157, length=8172, window[157,164]
 [Window Slide] base: 157 -> 158
 [Send] ACK packet ack=158, win=8
-[Simulation] DELAY packet seq=158 for 50ms
+[Simulation] DELAY packet seq=158 for 5ms
 [Receive] Data packet seq=158, length=8172, window[158,165]
 [Window Slide] base: 158 -> 159
 [Send] ACK packet ack=159, win=8
-[Simulation] DELAY packet seq=159 for 50ms
+[Simulation] DELAY packet seq=159 for 5ms
 [Receive] Data packet seq=159, length=8172, window[159,166]
 [Window Slide] base: 159 -> 160
 [Send] ACK packet ack=160, win=8
-[Simulation] DELAY packet seq=160 for 50ms
+[Simulation] DELAY packet seq=160 for 5ms
 [Receive] Data packet seq=160, length=8172, window[160,167]
 [Window Slide] base: 160 -> 161
 [Send] ACK packet ack=161, win=8
-[Simulation] DROPPED packet seq=161 (random=4, threshold=10)
-[Simulation] DELAY packet seq=162 for 50ms
-[Receive] Data packet seq=162, length=8172, window[161,168]
-[Send] ACK+SACK packet ack=161, SACK blocks=[162], win=8
-[Simulation] DELAY packet seq=163 for 50ms
-[Receive] Data packet seq=163, length=8172, window[161,168]
-[Send] ACK+SACK packet ack=161, SACK blocks=[162,163], win=8
-[Simulation] DELAY packet seq=164 for 50ms
-[Receive] Data packet seq=164, length=8172, window[161,168]
-[Send] ACK+SACK packet ack=161, SACK blocks=[162,163,164], win=8
-[Simulation] DELAY packet seq=165 for 50ms
-[Receive] Data packet seq=165, length=8172, window[161,168]
-[Send] ACK+SACK packet ack=161, SACK blocks=[162,163,164,165], win=8
-[Simulation] DROPPED packet seq=161 (random=4, threshold=10)
-[Simulation] DELAY packet seq=161 for 50ms
+[Simulation] DELAY packet seq=161 for 5ms
 [Receive] Data packet seq=161, length=8172, window[161,168]
-[Window Slide] base: 161 -> 166
+[Window Slide] base: 161 -> 162
+[Send] ACK packet ack=162, win=8
+[Simulation] DELAY packet seq=162 for 5ms
+[Receive] Data packet seq=162, length=8172, window[162,169]
+[Window Slide] base: 162 -> 163
+[Send] ACK packet ack=163, win=8
+[Simulation] DELAY packet seq=163 for 5ms
+[Receive] Data packet seq=163, length=8172, window[163,170]
+[Window Slide] base: 163 -> 164
+[Send] ACK packet ack=164, win=8
+[Simulation] DELAY packet seq=164 for 5ms
+[Receive] Data packet seq=164, length=8172, window[164,171]
+[Window Slide] base: 164 -> 165
+[Send] ACK packet ack=165, win=8
+[Simulation] DELAY packet seq=165 for 5ms
+[Receive] Data packet seq=165, length=8172, window[165,172]
+[Window Slide] base: 165 -> 166
 [Send] ACK packet ack=166, win=8
-[Simulation] DELAY packet seq=166 for 50ms
+[Simulation] DELAY packet seq=166 for 5ms
 [Receive] Data packet seq=166, length=8172, window[166,173]
 [Window Slide] base: 166 -> 167
 [Send] ACK packet ack=167, win=8
-[Simulation] DELAY packet seq=167 for 50ms
+[Simulation] DELAY packet seq=167 for 5ms
 [Receive] Data packet seq=167, length=8172, window[167,174]
 [Window Slide] base: 167 -> 168
 [Send] ACK packet ack=168, win=8
-[Simulation] DELAY packet seq=168 for 50ms
+[Simulation] DELAY packet seq=168 for 5ms
 [Receive] Data packet seq=168, length=8172, window[168,175]
 [Window Slide] base: 168 -> 169
 [Send] ACK packet ack=169, win=8
-[Simulation] DELAY packet seq=169 for 50ms
+[Simulation] DROPPED packet seq=169 (random=0, threshold=5)
+[Simulation] DELAY packet seq=170 for 5ms
+[Receive] Data packet seq=170, length=8172, window[169,176]
+[Send] ACK+SACK packet ack=169, SACK blocks=[170], win=8
+[Simulation] DELAY packet seq=171 for 5ms
+[Receive] Data packet seq=171, length=8172, window[169,176]
+[Send] ACK+SACK packet ack=169, SACK blocks=[170,171], win=8
+[Simulation] DELAY packet seq=172 for 5ms
+[Receive] Data packet seq=172, length=8172, window[169,176]
+[Send] ACK+SACK packet ack=169, SACK blocks=[170,171,172], win=8
+[Simulation] DELAY packet seq=173 for 5ms
+[Receive] Data packet seq=173, length=8172, window[169,176]
+[Send] ACK+SACK packet ack=169, SACK blocks=[170,171,172,173], win=8
+[Simulation] DELAY packet seq=174 for 5ms
+[Receive] Data packet seq=174, length=8172, window[169,176]
+[Send] ACK+SACK packet ack=169, SACK blocks=[170,171,172,173], win=8
+[Simulation] DELAY packet seq=175 for 5ms
+[Receive] Data packet seq=175, length=8172, window[169,176]
+[Send] ACK+SACK packet ack=169, SACK blocks=[170,171,172,173], win=8
+[Simulation] DELAY packet seq=169 for 5ms
 [Receive] Data packet seq=169, length=8172, window[169,176]
-[Window Slide] base: 169 -> 170
-[Send] ACK packet ack=170, win=8
-[Simulation] DELAY packet seq=170 for 50ms
-[Receive] Data packet seq=170, length=8172, window[170,177]
-[Window Slide] base: 170 -> 171
-[Send] ACK packet ack=171, win=8
-[Simulation] DELAY packet seq=171 for 50ms
-[Receive] Data packet seq=171, length=8172, window[171,178]
-[Window Slide] base: 171 -> 172
-[Send] ACK packet ack=172, win=8
-[Simulation] DELAY packet seq=172 for 50ms
-[Receive] Data packet seq=172, length=8172, window[172,179]
-[Window Slide] base: 172 -> 173
-[Send] ACK packet ack=173, win=8
-[Simulation] DELAY packet seq=173 for 50ms
-[Receive] Data packet seq=173, length=8172, window[173,180]
-[Window Slide] base: 173 -> 174
-[Send] ACK packet ack=174, win=8
-[Simulation] DELAY packet seq=174 for 50ms
-[Receive] Data packet seq=174, length=8172, window[174,181]
-[Window Slide] base: 174 -> 175
-[Send] ACK packet ack=175, win=8
-[Simulation] DELAY packet seq=175 for 50ms
-[Receive] Data packet seq=175, length=8172, window[175,182]
-[Window Slide] base: 175 -> 176
+[Window Slide] base: 169 -> 176
 [Send] ACK packet ack=176, win=8
-[Simulation] DELAY packet seq=176 for 50ms
+[Simulation] DELAY packet seq=176 for 5ms
 [Receive] Data packet seq=176, length=8172, window[176,183]
 [Window Slide] base: 176 -> 177
 [Send] ACK packet ack=177, win=8
-[Simulation] DELAY packet seq=177 for 50ms
+[Simulation] DELAY packet seq=177 for 5ms
 [Receive] Data packet seq=177, length=8172, window[177,184]
 [Window Slide] base: 177 -> 178
 [Send] ACK packet ack=178, win=8
-[Simulation] DELAY packet seq=178 for 50ms
+[Simulation] DELAY packet seq=178 for 5ms
 [Receive] Data packet seq=178, length=8172, window[178,185]
 [Window Slide] base: 178 -> 179
 [Send] ACK packet ack=179, win=8
-[Simulation] DELAY packet seq=179 for 50ms
+[Simulation] DELAY packet seq=179 for 5ms
 [Receive] Data packet seq=179, length=8172, window[179,186]
 [Window Slide] base: 179 -> 180
 [Send] ACK packet ack=180, win=8
-[Simulation] DELAY packet seq=180 for 50ms
+[Simulation] DELAY packet seq=180 for 5ms
 [Receive] Data packet seq=180, length=8172, window[180,187]
 [Window Slide] base: 180 -> 181
 [Send] ACK packet ack=181, win=8
-[Simulation] DELAY packet seq=181 for 50ms
+[Simulation] DELAY packet seq=181 for 5ms
 [Receive] Data packet seq=181, length=8172, window[181,188]
 [Window Slide] base: 181 -> 182
 [Send] ACK packet ack=182, win=8
-[Simulation] DELAY packet seq=182 for 50ms
+[Simulation] DELAY packet seq=182 for 5ms
 [Receive] Data packet seq=182, length=8172, window[182,189]
 [Window Slide] base: 182 -> 183
 [Send] ACK packet ack=183, win=8
-[Simulation] DELAY packet seq=183 for 50ms
+[Simulation] DELAY packet seq=183 for 5ms
 [Receive] Data packet seq=183, length=8172, window[183,190]
 [Window Slide] base: 183 -> 184
 [Send] ACK packet ack=184, win=8
-[Simulation] DELAY packet seq=184 for 50ms
+[Simulation] DELAY packet seq=184 for 5ms
 [Receive] Data packet seq=184, length=8172, window[184,191]
 [Window Slide] base: 184 -> 185
 [Send] ACK packet ack=185, win=8
-[Simulation] DELAY packet seq=185 for 50ms
+[Simulation] DELAY packet seq=185 for 5ms
 [Receive] Data packet seq=185, length=8172, window[185,192]
 [Window Slide] base: 185 -> 186
 [Send] ACK packet ack=186, win=8
-[Simulation] DELAY packet seq=186 for 50ms
+[Simulation] DELAY packet seq=186 for 5ms
 [Receive] Data packet seq=186, length=8172, window[186,193]
 [Window Slide] base: 186 -> 187
 [Send] ACK packet ack=187, win=8
-[Simulation] DELAY packet seq=187 for 50ms
+[Simulation] DELAY packet seq=187 for 5ms
 [Receive] Data packet seq=187, length=8172, window[187,194]
 [Window Slide] base: 187 -> 188
 [Send] ACK packet ack=188, win=8
-[Simulation] DELAY packet seq=188 for 50ms
+[Simulation] DELAY packet seq=188 for 5ms
 [Receive] Data packet seq=188, length=8172, window[188,195]
 [Window Slide] base: 188 -> 189
 [Send] ACK packet ack=189, win=8
-[Simulation] DELAY packet seq=189 for 50ms
+[Simulation] DELAY packet seq=189 for 5ms
 [Receive] Data packet seq=189, length=8172, window[189,196]
 [Window Slide] base: 189 -> 190
 [Send] ACK packet ack=190, win=8
-[Simulation] DELAY packet seq=190 for 50ms
+[Simulation] DELAY packet seq=190 for 5ms
 [Receive] Data packet seq=190, length=8172, window[190,197]
 [Window Slide] base: 190 -> 191
 [Send] ACK packet ack=191, win=8
-[Simulation] DELAY packet seq=191 for 50ms
+[Simulation] DELAY packet seq=191 for 5ms
 [Receive] Data packet seq=191, length=8172, window[191,198]
 [Window Slide] base: 191 -> 192
 [Send] ACK packet ack=192, win=8
-[Simulation] DELAY packet seq=192 for 50ms
+[Simulation] DELAY packet seq=192 for 5ms
 [Receive] Data packet seq=192, length=8172, window[192,199]
 [Window Slide] base: 192 -> 193
 [Send] ACK packet ack=193, win=8
-[Simulation] DELAY packet seq=193 for 50ms
+[Simulation] DELAY packet seq=193 for 5ms
 [Receive] Data packet seq=193, length=8172, window[193,200]
 [Window Slide] base: 193 -> 194
 [Send] ACK packet ack=194, win=8
-[Simulation] DROPPED packet seq=194 (random=8, threshold=10)
-[Simulation] DELAY packet seq=195 for 50ms
-[Receive] Data packet seq=195, length=8172, window[194,201]
-[Send] ACK+SACK packet ack=194, SACK blocks=[195], win=8
-[Simulation] DELAY packet seq=196 for 50ms
-[Receive] Data packet seq=196, length=8172, window[194,201]
-[Send] ACK+SACK packet ack=194, SACK blocks=[195,196], win=8
-[Simulation] DELAY packet seq=197 for 50ms
-[Receive] Data packet seq=197, length=8172, window[194,201]
-[Send] ACK+SACK packet ack=194, SACK blocks=[195,196,197], win=8
-[Simulation] DELAY packet seq=198 for 50ms
-[Receive] Data packet seq=198, length=8172, window[194,201]
-[Send] ACK+SACK packet ack=194, SACK blocks=[195,196,197,198], win=8
-[Simulation] DELAY packet seq=199 for 50ms
-[Receive] Data packet seq=199, length=8172, window[194,201]
-[Send] ACK+SACK packet ack=194, SACK blocks=[195,196,197,198], win=8
-[Simulation] DELAY packet seq=200 for 50ms
-[Receive] Data packet seq=200, length=8172, window[194,201]
-[Send] ACK+SACK packet ack=194, SACK blocks=[195,196,197,198], win=8
-[Simulation] DELAY packet seq=201 for 50ms
-[Receive] Data packet seq=201, length=8172, window[194,201]
-[Send] ACK+SACK packet ack=194, SACK blocks=[195,196,197,198], win=8
-[Simulation] DELAY packet seq=194 for 50ms
+[Simulation] DELAY packet seq=194 for 5ms
 [Receive] Data packet seq=194, length=8172, window[194,201]
-[Window Slide] base: 194 -> 202
+[Window Slide] base: 194 -> 195
+[Send] ACK packet ack=195, win=8
+[Simulation] DELAY packet seq=195 for 5ms
+[Receive] Data packet seq=195, length=8172, window[195,202]
+[Window Slide] base: 195 -> 196
+[Send] ACK packet ack=196, win=8
+[Simulation] DELAY packet seq=196 for 5ms
+[Receive] Data packet seq=196, length=8172, window[196,203]
+[Window Slide] base: 196 -> 197
+[Send] ACK packet ack=197, win=8
+[Simulation] DELAY packet seq=197 for 5ms
+[Receive] Data packet seq=197, length=8172, window[197,204]
+[Window Slide] base: 197 -> 198
+[Send] ACK packet ack=198, win=8
+[Simulation] DELAY packet seq=198 for 5ms
+[Receive] Data packet seq=198, length=8172, window[198,205]
+[Window Slide] base: 198 -> 199
+[Send] ACK packet ack=199, win=8
+[Simulation] DELAY packet seq=199 for 5ms
+[Receive] Data packet seq=199, length=8172, window[199,206]
+[Window Slide] base: 199 -> 200
+[Send] ACK packet ack=200, win=8
+[Simulation] DELAY packet seq=200 for 5ms
+[Receive] Data packet seq=200, length=8172, window[200,207]
+[Window Slide] base: 200 -> 201
+[Send] ACK packet ack=201, win=8
+[Simulation] DELAY packet seq=201 for 5ms
+[Receive] Data packet seq=201, length=8172, window[201,208]
+[Window Slide] base: 201 -> 202
 [Send] ACK packet ack=202, win=8
-[Simulation] DELAY packet seq=194 for 50ms
-[Old Packet] seq=194 < base=202, resending ACK
-[Send] ACK packet ack=202, win=8
-[Simulation] DELAY packet seq=199 for 50ms
-[Old Packet] seq=199 < base=202, resending ACK
-[Send] ACK packet ack=202, win=8
-[Simulation] DELAY packet seq=200 for 50ms
-[Old Packet] seq=200 < base=202, resending ACK
-[Send] ACK packet ack=202, win=8
-[Simulation] DELAY packet seq=202 for 50ms
+[Simulation] DELAY packet seq=202 for 5ms
 [Receive] Data packet seq=202, length=8172, window[202,209]
 [Window Slide] base: 202 -> 203
 [Send] ACK packet ack=203, win=8
-[Simulation] DELAY packet seq=203 for 50ms
+[Simulation] DELAY packet seq=203 for 5ms
 [Receive] Data packet seq=203, length=8172, window[203,210]
 [Window Slide] base: 203 -> 204
 [Send] ACK packet ack=204, win=8
-[Simulation] DELAY packet seq=202 for 50ms
-[Old Packet] seq=202 < base=204, resending ACK
-[Send] ACK packet ack=204, win=8
-[Simulation] DELAY packet seq=204 for 50ms
+[Simulation] DELAY packet seq=204 for 5ms
 [Receive] Data packet seq=204, length=8172, window[204,211]
 [Window Slide] base: 204 -> 205
 [Send] ACK packet ack=205, win=8
-[Simulation] DELAY packet seq=205 for 50ms
+[Simulation] DELAY packet seq=205 for 5ms
 [Receive] Data packet seq=205, length=8172, window[205,212]
 [Window Slide] base: 205 -> 206
 [Send] ACK packet ack=206, win=8
-[Simulation] DELAY packet seq=206 for 50ms
+[Simulation] DELAY packet seq=206 for 5ms
 [Receive] Data packet seq=206, length=8172, window[206,213]
 [Window Slide] base: 206 -> 207
 [Send] ACK packet ack=207, win=8
-[Simulation] DROPPED packet seq=207 (random=3, threshold=10)
-[Simulation] DELAY packet seq=208 for 50ms
-[Receive] Data packet seq=208, length=8172, window[207,214]
-[Send] ACK+SACK packet ack=207, SACK blocks=[208], win=8
-[Simulation] DELAY packet seq=209 for 50ms
-[Receive] Data packet seq=209, length=8172, window[207,214]
-[Send] ACK+SACK packet ack=207, SACK blocks=[208,209], win=8
-[Simulation] DELAY packet seq=210 for 50ms
-[Receive] Data packet seq=210, length=8172, window[207,214]
-[Send] ACK+SACK packet ack=207, SACK blocks=[208,209,210], win=8
-[Simulation] DELAY packet seq=207 for 50ms
+[Simulation] DELAY packet seq=207 for 5ms
 [Receive] Data packet seq=207, length=8172, window[207,214]
-[Window Slide] base: 207 -> 211
-[Send] ACK packet ack=211, win=8
-[Simulation] DELAY packet seq=211 for 50ms
-[Receive] Data packet seq=211, length=8172, window[211,218]
-[Window Slide] base: 211 -> 212
-[Send] ACK packet ack=212, win=8
-[Simulation] DELAY packet seq=212 for 50ms
-[Receive] Data packet seq=212, length=8172, window[212,219]
-[Window Slide] base: 212 -> 213
-[Send] ACK packet ack=213, win=8
-[Simulation] DELAY packet seq=213 for 50ms
-[Receive] Data packet seq=213, length=8172, window[213,220]
-[Window Slide] base: 213 -> 214
-[Send] ACK packet ack=214, win=8
-[Simulation] DELAY packet seq=214 for 50ms
-[Receive] Data packet seq=214, length=8172, window[214,221]
-[Window Slide] base: 214 -> 215
-[Send] ACK packet ack=215, win=8
-[Simulation] DELAY packet seq=215 for 50ms
-[Receive] Data packet seq=215, length=8172, window[215,222]
-[Window Slide] base: 215 -> 216
-[Send] ACK packet ack=216, win=8
-[Simulation] DELAY packet seq=216 for 50ms
-[Receive] Data packet seq=216, length=8172, window[216,223]
-[Window Slide] base: 216 -> 217
-[Send] ACK packet ack=217, win=8
-[Simulation] DELAY packet seq=217 for 50ms
-[Receive] Data packet seq=217, length=8172, window[217,224]
-[Window Slide] base: 217 -> 218
+[Window Slide] base: 207 -> 208
+[Send] ACK packet ack=208, win=8
+[Simulation] DELAY packet seq=208 for 5ms
+[Receive] Data packet seq=208, length=8172, window[208,215]
+[Window Slide] base: 208 -> 209
+[Send] ACK packet ack=209, win=8
+[Simulation] DELAY packet seq=209 for 5ms
+[Receive] Data packet seq=209, length=8172, window[209,216]
+[Window Slide] base: 209 -> 210
+[Send] ACK packet ack=210, win=8
+[Simulation] DROPPED packet seq=210 (random=1, threshold=5)
+[Simulation] DELAY packet seq=211 for 5ms
+[Receive] Data packet seq=211, length=8172, window[210,217]
+[Send] ACK+SACK packet ack=210, SACK blocks=[211], win=8
+[Simulation] DELAY packet seq=212 for 5ms
+[Receive] Data packet seq=212, length=8172, window[210,217]
+[Send] ACK+SACK packet ack=210, SACK blocks=[211,212], win=8
+[Simulation] DELAY packet seq=213 for 5ms
+[Receive] Data packet seq=213, length=8172, window[210,217]
+[Send] ACK+SACK packet ack=210, SACK blocks=[211,212,213], win=8
+[Simulation] DELAY packet seq=214 for 5ms
+[Receive] Data packet seq=214, length=8172, window[210,217]
+[Send] ACK+SACK packet ack=210, SACK blocks=[211,212,213,214], win=8
+[Simulation] DELAY packet seq=215 for 5ms
+[Receive] Data packet seq=215, length=8172, window[210,217]
+[Send] ACK+SACK packet ack=210, SACK blocks=[211,212,213,214], win=8
+[Simulation] DELAY packet seq=216 for 5ms
+[Receive] Data packet seq=216, length=8172, window[210,217]
+[Send] ACK+SACK packet ack=210, SACK blocks=[211,212,213,214], win=8
+[Simulation] DELAY packet seq=217 for 5ms
+[Receive] Data packet seq=217, length=8172, window[210,217]
+[Send] ACK+SACK packet ack=210, SACK blocks=[211,212,213,214], win=8
+[Simulation] DELAY packet seq=210 for 5ms
+[Receive] Data packet seq=210, length=8172, window[210,217]
+[Window Slide] base: 210 -> 218
 [Send] ACK packet ack=218, win=8
-[Simulation] DELAY packet seq=218 for 50ms
+[Simulation] DELAY packet seq=218 for 5ms
 [Receive] Data packet seq=218, length=8172, window[218,225]
 [Window Slide] base: 218 -> 219
 [Send] ACK packet ack=219, win=8
-[Simulation] DELAY packet seq=219 for 50ms
+[Simulation] DROPPED packet seq=219 (random=0, threshold=5)
+[Simulation] DELAY packet seq=220 for 5ms
+[Receive] Data packet seq=220, length=8172, window[219,226]
+[Send] ACK+SACK packet ack=219, SACK blocks=[220], win=8
+[Simulation] DELAY packet seq=221 for 5ms
+[Receive] Data packet seq=221, length=8172, window[219,226]
+[Send] ACK+SACK packet ack=219, SACK blocks=[220,221], win=8
+[Simulation] DELAY packet seq=222 for 5ms
+[Receive] Data packet seq=222, length=8172, window[219,226]
+[Send] ACK+SACK packet ack=219, SACK blocks=[220,221,222], win=8
+[Simulation] DELAY packet seq=223 for 5ms
+[Receive] Data packet seq=223, length=8172, window[219,226]
+[Send] ACK+SACK packet ack=219, SACK blocks=[220,221,222,223], win=8
+[Simulation] DELAY packet seq=219 for 5ms
 [Receive] Data packet seq=219, length=8172, window[219,226]
-[Window Slide] base: 219 -> 220
-[Send] ACK packet ack=220, win=8
-[Simulation] DELAY packet seq=220 for 50ms
-[Receive] Data packet seq=220, length=8172, window[220,227]
-[Window Slide] base: 220 -> 221
-[Send] ACK packet ack=221, win=8
-[Simulation] DELAY packet seq=221 for 50ms
-[Receive] Data packet seq=221, length=8172, window[221,228]
-[Window Slide] base: 221 -> 222
-[Send] ACK packet ack=222, win=8
-[Simulation] DELAY packet seq=222 for 50ms
-[Receive] Data packet seq=222, length=8172, window[222,229]
-[Window Slide] base: 222 -> 223
-[Send] ACK packet ack=223, win=8
-[Simulation] DELAY packet seq=223 for 50ms
-[Receive] Data packet seq=223, length=8172, window[223,230]
-[Window Slide] base: 223 -> 224
+[Window Slide] base: 219 -> 224
 [Send] ACK packet ack=224, win=8
-[Simulation] DELAY packet seq=224 for 50ms
+[Simulation] DELAY packet seq=224 for 5ms
 [Receive] Data packet seq=224, length=8172, window[224,231]
 [Window Slide] base: 224 -> 225
 [Send] ACK packet ack=225, win=8
-[Simulation] DELAY packet seq=225 for 50ms
+[Simulation] DELAY packet seq=225 for 5ms
 [Receive] Data packet seq=225, length=8172, window[225,232]
 [Window Slide] base: 225 -> 226
 [Send] ACK packet ack=226, win=8
-[Simulation] DELAY packet seq=226 for 50ms
+[Simulation] DELAY packet seq=226 for 5ms
 [Receive] Data packet seq=226, length=8172, window[226,233]
 [Window Slide] base: 226 -> 227
 [Send] ACK packet ack=227, win=8
-[Simulation] DELAY packet seq=227 for 50ms
+[Simulation] DELAY packet seq=227 for 5ms
 [Receive] Data packet seq=227, length=8172, window[227,234]
 [Window Slide] base: 227 -> 228
 [Send] ACK packet ack=228, win=8
-[Simulation] DELAY packet seq=228 for 50ms
-[Receive] Data packet seq=228, length=2309, window[228,235]
+[Simulation] DELAY packet seq=228 for 5ms
+[Receive] Data packet seq=228, length=8172, window[228,235]
 [Window Slide] base: 228 -> 229
 [Send] ACK packet ack=229, win=8
-[Timeout] Waiting for data packet timeout (1/3)
-[Timeout] Waiting for data packet timeout (2/3)
-[Timeout] Waiting for data packet timeout (3/3)
-[Pipeline Receive] Reception completed, received 8172 bytes of data
-
-[Pipeline Receive] Starting to receive data, window size=8, starting sequence number=229
-[Simulation] DELAY packet seq=229 for 50ms
-[Receive] Data packet seq=229, length=8172, window[229,236]
+[Simulation] DROPPED packet seq=229 (random=0, threshold=5)
+[Simulation] DELAY packet seq=229 for 5ms
+[Receive] Data packet seq=229, length=2309, window[229,236]
 [Window Slide] base: 229 -> 230
 [Send] ACK packet ack=230, win=8
-[Simulation] DELAY packet seq=230 for 50ms
-[Receive] Data packet seq=230, length=8172, window[230,237]
-[Window Slide] base: 230 -> 231
-[Send] ACK packet ack=231, win=8
-[Simulation] DELAY packet seq=231 for 50ms
-[Receive] Data packet seq=231, length=8172, window[231,238]
-[Window Slide] base: 231 -> 232
-[Send] ACK packet ack=232, win=8
-[Simulation] DELAY packet seq=232 for 50ms
-[Receive] Data packet seq=232, length=8172, window[232,239]
-[Window Slide] base: 232 -> 233
-[Send] ACK packet ack=233, win=8
-[Simulation] DELAY packet seq=233 for 50ms
-[Receive] Data packet seq=233, length=8172, window[233,240]
-[Window Slide] base: 233 -> 234
-[Send] ACK packet ack=234, win=8
-[Simulation] DELAY packet seq=234 for 50ms
-[Receive] Data packet seq=234, length=8172, window[234,241]
-[Window Slide] base: 234 -> 235
-[Send] ACK packet ack=235, win=8
-[Simulation] DELAY packet seq=235 for 50ms
-[Receive] Data packet seq=235, length=8172, window[235,242]
-[Window Slide] base: 235 -> 236
-[Send] ACK packet ack=236, win=8
-[Simulation] DELAY packet seq=236 for 50ms
-[Receive] Data packet seq=236, length=8172, window[236,243]
-[Window Slide] base: 236 -> 237
-[Send] ACK packet ack=237, win=8
-[Simulation] DELAY packet seq=237 for 50ms
-[Receive] Data packet seq=237, length=8172, window[237,244]
-[Window Slide] base: 237 -> 238
-[Send] ACK packet ack=238, win=8
-[Simulation] DELAY packet seq=238 for 50ms
-[Receive] Data packet seq=238, length=8172, window[238,245]
-[Window Slide] base: 238 -> 239
-[Send] ACK packet ack=239, win=8
-[Simulation] DELAY packet seq=239 for 50ms
-[Receive] Data packet seq=239, length=8172, window[239,246]
-[Window Slide] base: 239 -> 240
-[Send] ACK packet ack=240, win=8
-[Simulation] DELAY packet seq=240 for 50ms
-[Receive] Data packet seq=240, length=8172, window[240,247]
-[Window Slide] base: 240 -> 241
-[Send] ACK packet ack=241, win=8
-[Simulation] DELAY packet seq=241 for 50ms
-[Receive] Data packet seq=241, length=8172, window[241,248]
-[Window Slide] base: 241 -> 242
-[Send] ACK packet ack=242, win=8
-[Simulation] DELAY packet seq=242 for 50ms
-[Receive] Data packet seq=242, length=8172, window[242,249]
-[Window Slide] base: 242 -> 243
-[Send] ACK packet ack=243, win=8
-[Simulation] DELAY packet seq=243 for 50ms
-[Receive] Data packet seq=243, length=8172, window[243,250]
-[Window Slide] base: 243 -> 244
-[Send] ACK packet ack=244, win=8
-[Simulation] DELAY packet seq=244 for 50ms
-[Receive] Data packet seq=244, length=8172, window[244,251]
-[Window Slide] base: 244 -> 245
-[Send] ACK packet ack=245, win=8
-[Simulation] DELAY packet seq=245 for 50ms
-[Receive] Data packet seq=245, length=8172, window[245,252]
-[Window Slide] base: 245 -> 246
-[Send] ACK packet ack=246, win=8
-[Simulation] DELAY packet seq=246 for 50ms
-[Receive] Data packet seq=246, length=8172, window[246,253]
-[Window Slide] base: 246 -> 247
-[Send] ACK packet ack=247, win=8
-[Simulation] DELAY packet seq=247 for 50ms
-[Receive] Data packet seq=247, length=8172, window[247,254]
-[Window Slide] base: 247 -> 248
-[Send] ACK packet ack=248, win=8
-[Simulation] DELAY packet seq=248 for 50ms
-[Receive] Data packet seq=248, length=8172, window[248,255]
-[Window Slide] base: 248 -> 249
-[Send] ACK packet ack=249, win=8
-[Simulation] DELAY packet seq=249 for 50ms
-[Receive] Data packet seq=249, length=8172, window[249,256]
-[Window Slide] base: 249 -> 250
-[Send] ACK packet ack=250, win=8
-[Simulation] DELAY packet seq=250 for 50ms
-[Receive] Data packet seq=250, length=8172, window[250,257]
-[Window Slide] base: 250 -> 251
-[Send] ACK packet ack=251, win=8
-[Simulation] DELAY packet seq=251 for 50ms
-[Receive] Data packet seq=251, length=8172, window[251,258]
-[Window Slide] base: 251 -> 252
-[Send] ACK packet ack=252, win=8
-[Simulation] DELAY packet seq=252 for 50ms
-[Receive] Data packet seq=252, length=8172, window[252,259]
-[Window Slide] base: 252 -> 253
-[Send] ACK packet ack=253, win=8
-[Simulation] DELAY packet seq=253 for 50ms
-[Receive] Data packet seq=253, length=8172, window[253,260]
-[Window Slide] base: 253 -> 254
-[Send] ACK packet ack=254, win=8
-[Simulation] DELAY packet seq=254 for 50ms
-[Receive] Data packet seq=254, length=8172, window[254,261]
-[Window Slide] base: 254 -> 255
-[Send] ACK packet ack=255, win=8
-[Simulation] DELAY packet seq=255 for 50ms
-[Receive] Data packet seq=255, length=8172, window[255,262]
-[Window Slide] base: 255 -> 256
-[Send] ACK packet ack=256, win=8
-[Simulation] DELAY packet seq=256 for 50ms
-[Receive] Data packet seq=256, length=8172, window[256,263]
-[Window Slide] base: 256 -> 257
-[Send] ACK packet ack=257, win=8
-[Simulation] DELAY packet seq=257 for 50ms
-[Receive] Data packet seq=257, length=8172, window[257,264]
-[Window Slide] base: 257 -> 258
-[Send] ACK packet ack=258, win=8
-[Simulation] DELAY packet seq=258 for 50ms
-[Receive] Data packet seq=258, length=8172, window[258,265]
-[Window Slide] base: 258 -> 259
-[Send] ACK packet ack=259, win=8
-[Simulation] DELAY packet seq=259 for 50ms
-[Receive] Data packet seq=259, length=8172, window[259,266]
-[Window Slide] base: 259 -> 260
-[Send] ACK packet ack=260, win=8
-[Simulation] DROPPED packet seq=260 (random=3, threshold=10)
-[Simulation] DELAY packet seq=261 for 50ms
-[Receive] Data packet seq=261, length=8172, window[260,267]
-[Send] ACK+SACK packet ack=260, SACK blocks=[261], win=8
-[Simulation] DELAY packet seq=262 for 50ms
-[Receive] Data packet seq=262, length=8172, window[260,267]
-[Send] ACK+SACK packet ack=260, SACK blocks=[261,262], win=8
-[Simulation] DELAY packet seq=263 for 50ms
-[Receive] Data packet seq=263, length=8172, window[260,267]
-[Send] ACK+SACK packet ack=260, SACK blocks=[261,262,263], win=8
-[Simulation] DELAY packet seq=264 for 50ms
-[Receive] Data packet seq=264, length=8172, window[260,267]
-[Send] ACK+SACK packet ack=260, SACK blocks=[261,262,263,264], win=8
-[Simulation] DELAY packet seq=265 for 50ms
-[Receive] Data packet seq=265, length=8172, window[260,267]
-[Send] ACK+SACK packet ack=260, SACK blocks=[261,262,263,264], win=8
-[Simulation] DELAY packet seq=266 for 50ms
-[Receive] Data packet seq=266, length=8172, window[260,267]
-[Send] ACK+SACK packet ack=260, SACK blocks=[261,262,263,264], win=8
-[Simulation] DELAY packet seq=267 for 50ms
-[Receive] Data packet seq=267, length=8172, window[260,267]
-[Send] ACK+SACK packet ack=260, SACK blocks=[261,262,263,264], win=8
-[Simulation] DELAY packet seq=260 for 50ms
-[Receive] Data packet seq=260, length=8172, window[260,267]
-[Window Slide] base: 260 -> 268
-[Send] ACK packet ack=268, win=8
-[Simulation] DELAY packet seq=260 for 50ms
-[Old Packet] seq=260 < base=268, resending ACK
-[Send] ACK packet ack=268, win=8
-[Simulation] DELAY packet seq=265 for 50ms
-[Old Packet] seq=265 < base=268, resending ACK
-[Send] ACK packet ack=268, win=8
-[Simulation] DELAY packet seq=268 for 50ms
-[Receive] Data packet seq=268, length=8172, window[268,275]
-[Window Slide] base: 268 -> 269
-[Send] ACK packet ack=269, win=8
-[Simulation] DELAY packet seq=269 for 50ms
-[Receive] Data packet seq=269, length=8172, window[269,276]
-[Window Slide] base: 269 -> 270
-[Send] ACK packet ack=270, win=8
-[Simulation] DELAY packet seq=270 for 50ms
-[Receive] Data packet seq=270, length=8172, window[270,277]
-[Window Slide] base: 270 -> 271
-[Send] ACK packet ack=271, win=8
-[Simulation] DELAY packet seq=271 for 50ms
-[Receive] Data packet seq=271, length=8172, window[271,278]
-[Window Slide] base: 271 -> 272
-[Send] ACK packet ack=272, win=8
-[Simulation] DELAY packet seq=272 for 50ms
-[Receive] Data packet seq=272, length=8172, window[272,279]
-[Window Slide] base: 272 -> 273
-[Send] ACK packet ack=273, win=8
-[Simulation] DELAY packet seq=273 for 50ms
-[Receive] Data packet seq=273, length=8172, window[273,280]
-[Window Slide] base: 273 -> 274
-[Send] ACK packet ack=274, win=8
-[Simulation] DELAY packet seq=274 for 50ms
-[Receive] Data packet seq=274, length=8172, window[274,281]
-[Window Slide] base: 274 -> 275
-[Send] ACK packet ack=275, win=8
-[Simulation] DELAY packet seq=275 for 50ms
-[Receive] Data packet seq=275, length=8172, window[275,282]
-[Window Slide] base: 275 -> 276
-[Send] ACK packet ack=276, win=8
-[Simulation] DELAY packet seq=276 for 50ms
-[Receive] Data packet seq=276, length=8172, window[276,283]
-[Window Slide] base: 276 -> 277
-[Send] ACK packet ack=277, win=8
-[Simulation] DELAY packet seq=277 for 50ms
-[Receive] Data packet seq=277, length=8172, window[277,284]
-[Window Slide] base: 277 -> 278
-[Send] ACK packet ack=278, win=8
-[Simulation] DROPPED packet seq=278 (random=0, threshold=10)
-[Simulation] DELAY packet seq=279 for 50ms
-[Receive] Data packet seq=279, length=8172, window[278,285]
-[Send] ACK+SACK packet ack=278, SACK blocks=[279], win=8
-[Simulation] DROPPED packet seq=280 (random=8, threshold=10)
-[Simulation] DROPPED packet seq=281 (random=9, threshold=10)
-[Simulation] DELAY packet seq=282 for 50ms
-[Receive] Data packet seq=282, length=8172, window[278,285]
-[Send] ACK+SACK packet ack=278, SACK blocks=[279,282], win=8
-[Simulation] DELAY packet seq=278 for 50ms
-[Receive] Data packet seq=278, length=8172, window[278,285]
-[Window Slide] base: 278 -> 280
-[Send] ACK+SACK packet ack=280, SACK blocks=[282], win=8
-[Simulation] DELAY packet seq=280 for 50ms
-[Receive] Data packet seq=280, length=8172, window[280,287]
-[Window Slide] base: 280 -> 281
-[Send] ACK+SACK packet ack=281, SACK blocks=[282], win=8
-[Simulation] DROPPED packet seq=281 (random=8, threshold=10)
-[Simulation] DELAY packet seq=281 for 50ms
-[Receive] Data packet seq=281, length=8172, window[281,288]
-[Window Slide] base: 281 -> 283
-[Send] ACK packet ack=283, win=8
-[Simulation] DELAY packet seq=283 for 50ms
-[Receive] Data packet seq=283, length=8172, window[283,290]
-[Window Slide] base: 283 -> 284
-[Send] ACK packet ack=284, win=8
-[Simulation] DELAY packet seq=284 for 50ms
-[Receive] Data packet seq=284, length=8172, window[284,291]
-[Window Slide] base: 284 -> 285
-[Send] ACK packet ack=285, win=8
-[Simulation] DELAY packet seq=285 for 50ms
-[Receive] Data packet seq=285, length=8172, window[285,292]
-[Window Slide] base: 285 -> 286
-[Send] ACK packet ack=286, win=8
-[Simulation] DELAY packet seq=286 for 50ms
-[Receive] Data packet seq=286, length=8172, window[286,293]
-[Window Slide] base: 286 -> 287
-[Send] ACK packet ack=287, win=8
-[Simulation] DELAY packet seq=287 for 50ms
-[Receive] Data packet seq=287, length=8172, window[287,294]
-[Window Slide] base: 287 -> 288
-[Send] ACK packet ack=288, win=8
-[Simulation] DELAY packet seq=288 for 50ms
-[Receive] Data packet seq=288, length=8172, window[288,295]
-[Window Slide] base: 288 -> 289
-[Send] ACK packet ack=289, win=8
-[Simulation] DELAY packet seq=289 for 50ms
-[Receive] Data packet seq=289, length=8172, window[289,296]
-[Window Slide] base: 289 -> 290
-[Send] ACK packet ack=290, win=8
-[Simulation] DELAY packet seq=290 for 50ms
-[Receive] Data packet seq=290, length=8172, window[290,297]
-[Window Slide] base: 290 -> 291
-[Send] ACK packet ack=291, win=8
-[Simulation] DELAY packet seq=291 for 50ms
-[Receive] Data packet seq=291, length=8172, window[291,298]
-[Window Slide] base: 291 -> 292
-[Send] ACK packet ack=292, win=8
-[Simulation] DELAY packet seq=292 for 50ms
-[Receive] Data packet seq=292, length=8172, window[292,299]
-[Window Slide] base: 292 -> 293
-[Send] ACK packet ack=293, win=8
-[Simulation] DELAY packet seq=293 for 50ms
-[Receive] Data packet seq=293, length=8172, window[293,300]
-[Window Slide] base: 293 -> 294
-[Send] ACK packet ack=294, win=8
-[Simulation] DELAY packet seq=294 for 50ms
-[Receive] Data packet seq=294, length=8172, window[294,301]
-[Window Slide] base: 294 -> 295
-[Send] ACK packet ack=295, win=8
-[Simulation] DELAY packet seq=295 for 50ms
-[Receive] Data packet seq=295, length=8172, window[295,302]
-[Window Slide] base: 295 -> 296
-[Send] ACK packet ack=296, win=8
-[Simulation] DELAY packet seq=296 for 50ms
-[Receive] Data packet seq=296, length=8172, window[296,303]
-[Window Slide] base: 296 -> 297
-[Send] ACK packet ack=297, win=8
-[Simulation] DELAY packet seq=297 for 50ms
-[Receive] Data packet seq=297, length=8172, window[297,304]
-[Window Slide] base: 297 -> 298
-[Send] ACK packet ack=298, win=8
-[Simulation] DELAY packet seq=298 for 50ms
-[Receive] Data packet seq=298, length=8172, window[298,305]
-[Window Slide] base: 298 -> 299
-[Send] ACK packet ack=299, win=8
-[Simulation] DELAY packet seq=299 for 50ms
-[Receive] Data packet seq=299, length=8172, window[299,306]
-[Window Slide] base: 299 -> 300
-[Send] ACK packet ack=300, win=8
-[Simulation] DELAY packet seq=300 for 50ms
-[Receive] Data packet seq=300, length=8172, window[300,307]
-[Window Slide] base: 300 -> 301
-[Send] ACK packet ack=301, win=8
-[Simulation] DELAY packet seq=301 for 50ms
-[Receive] Data packet seq=301, length=8172, window[301,308]
-[Window Slide] base: 301 -> 302
-[Send] ACK packet ack=302, win=8
-[Simulation] DELAY packet seq=302 for 50ms
-[Receive] Data packet seq=302, length=8172, window[302,309]
-[Window Slide] base: 302 -> 303
-[Send] ACK packet ack=303, win=8
-[Simulation] DELAY packet seq=303 for 50ms
-[Receive] Data packet seq=303, length=8172, window[303,310]
-[Window Slide] base: 303 -> 304
-[Send] ACK packet ack=304, win=8
-[Simulation] DELAY packet seq=304 for 50ms
-[Receive] Data packet seq=304, length=8172, window[304,311]
-[Window Slide] base: 304 -> 305
-[Send] ACK packet ack=305, win=8
-[Simulation] DELAY packet seq=305 for 50ms
-[Receive] Data packet seq=305, length=8172, window[305,312]
-[Window Slide] base: 305 -> 306
-[Send] ACK packet ack=306, win=8
-[Simulation] DELAY packet seq=306 for 50ms
-[Receive] Data packet seq=306, length=8172, window[306,313]
-[Window Slide] base: 306 -> 307
-[Send] ACK packet ack=307, win=8
-[Simulation] DELAY packet seq=307 for 50ms
-[Receive] Data packet seq=307, length=8172, window[307,314]
-[Window Slide] base: 307 -> 308
-[Send] ACK packet ack=308, win=8
-[Simulation] DELAY packet seq=308 for 50ms
-[Receive] Data packet seq=308, length=8172, window[308,315]
-[Window Slide] base: 308 -> 309
-[Send] ACK packet ack=309, win=8
-[Simulation] DELAY packet seq=309 for 50ms
-[Receive] Data packet seq=309, length=8172, window[309,316]
-[Window Slide] base: 309 -> 310
-[Send] ACK packet ack=310, win=8
-[Simulation] DELAY packet seq=310 for 50ms
-[Receive] Data packet seq=310, length=8172, window[310,317]
-[Window Slide] base: 310 -> 311
-[Send] ACK packet ack=311, win=8
-[Simulation] DELAY packet seq=311 for 50ms
-[Receive] Data packet seq=311, length=8172, window[311,318]
-[Window Slide] base: 311 -> 312
-[Send] ACK packet ack=312, win=8
-[Simulation] DELAY packet seq=312 for 50ms
-[Receive] Data packet seq=312, length=8172, window[312,319]
-[Window Slide] base: 312 -> 313
-[Send] ACK packet ack=313, win=8
-[Simulation] DELAY packet seq=313 for 50ms
-[Receive] Data packet seq=313, length=8172, window[313,320]
-[Window Slide] base: 313 -> 314
-[Send] ACK packet ack=314, win=8
-[Simulation] DELAY packet seq=314 for 50ms
-[Receive] Data packet seq=314, length=8172, window[314,321]
-[Window Slide] base: 314 -> 315
-[Send] ACK packet ack=315, win=8
-[Simulation] DELAY packet seq=315 for 50ms
-[Receive] Data packet seq=315, length=8172, window[315,322]
-[Window Slide] base: 315 -> 316
-[Send] ACK packet ack=316, win=8
-[Simulation] DELAY packet seq=316 for 50ms
-[Receive] Data packet seq=316, length=8172, window[316,323]
-[Window Slide] base: 316 -> 317
-[Send] ACK packet ack=317, win=8
-[Simulation] DELAY packet seq=317 for 50ms
-[Receive] Data packet seq=317, length=8172, window[317,324]
-[Window Slide] base: 317 -> 318
-[Send] ACK packet ack=318, win=8
-[Simulation] DELAY packet seq=318 for 50ms
-[Receive] Data packet seq=318, length=8172, window[318,325]
-[Window Slide] base: 318 -> 319
-[Send] ACK packet ack=319, win=8
-[Simulation] DELAY packet seq=319 for 50ms
-[Receive] Data packet seq=319, length=8172, window[319,326]
-[Window Slide] base: 319 -> 320
-[Send] ACK packet ack=320, win=8
-[Simulation] DELAY packet seq=320 for 50ms
-[Receive] Data packet seq=320, length=8172, window[320,327]
-[Window Slide] base: 320 -> 321
-[Send] ACK packet ack=321, win=8
-[Simulation] DELAY packet seq=321 for 50ms
-[Receive] Data packet seq=321, length=8172, window[321,328]
-[Window Slide] base: 321 -> 322
-[Send] ACK packet ack=322, win=8
-[Simulation] DELAY packet seq=322 for 50ms
-[Receive] Data packet seq=322, length=8172, window[322,329]
-[Window Slide] base: 322 -> 323
-[Send] ACK packet ack=323, win=8
-[Simulation] DELAY packet seq=323 for 50ms
-[Receive] Data packet seq=323, length=8172, window[323,330]
-[Window Slide] base: 323 -> 324
-[Send] ACK packet ack=324, win=8
-[Simulation] DELAY packet seq=324 for 50ms
-[Receive] Data packet seq=324, length=8172, window[324,331]
-[Window Slide] base: 324 -> 325
-[Send] ACK packet ack=325, win=8
-[Simulation] DELAY packet seq=325 for 50ms
-[Receive] Data packet seq=325, length=8172, window[325,332]
-[Window Slide] base: 325 -> 326
-[Send] ACK packet ack=326, win=8
-[Simulation] DROPPED packet seq=326 (random=3, threshold=10)
-[Simulation] DELAY packet seq=327 for 50ms
-[Receive] Data packet seq=327, length=8172, window[326,333]
-[Send] ACK+SACK packet ack=326, SACK blocks=[327], win=8
-[Simulation] DELAY packet seq=328 for 50ms
-[Receive] Data packet seq=328, length=8172, window[326,333]
-[Send] ACK+SACK packet ack=326, SACK blocks=[327,328], win=8
-[Simulation] DROPPED packet seq=329 (random=9, threshold=10)
-[Simulation] DELAY packet seq=330 for 50ms
-[Receive] Data packet seq=330, length=8172, window[326,333]
-[Send] ACK+SACK packet ack=326, SACK blocks=[327,328,330], win=8
-[Simulation] DELAY packet seq=331 for 50ms
-[Receive] Data packet seq=331, length=8172, window[326,333]
-[Send] ACK+SACK packet ack=326, SACK blocks=[327,328,330,331], win=8
-[Simulation] DELAY packet seq=332 for 50ms
-[Receive] Data packet seq=332, length=8172, window[326,333]
-[Send] ACK+SACK packet ack=326, SACK blocks=[327,328,330,331], win=8
-[Simulation] DELAY packet seq=333 for 50ms
-[Receive] Data packet seq=333, length=8172, window[326,333]
-[Send] ACK+SACK packet ack=326, SACK blocks=[327,328,330,331], win=8
-[Simulation] DELAY packet seq=326 for 50ms
-[Receive] Data packet seq=326, length=8172, window[326,333]
-[Window Slide] base: 326 -> 329
-[Send] ACK+SACK packet ack=329, SACK blocks=[330,331,332,333], win=8
-[Simulation] DELAY packet seq=326 for 50ms
-[Old Packet] seq=326 < base=329, resending ACK
-[Send] ACK packet ack=329, win=8
-[Simulation] DELAY packet seq=329 for 50ms
-[Receive] Data packet seq=329, length=8172, window[329,336]
-[Window Slide] base: 329 -> 334
-[Send] ACK packet ack=334, win=8
-[Simulation] DELAY packet seq=334 for 50ms
-[Receive] Data packet seq=334, length=8172, window[334,341]
-[Window Slide] base: 334 -> 335
-[Send] ACK packet ack=335, win=8
-[Simulation] DROPPED packet seq=335 (random=6, threshold=10)
-[Simulation] DELAY packet seq=336 for 50ms
-[Receive] Data packet seq=336, length=8172, window[335,342]
-[Send] ACK+SACK packet ack=335, SACK blocks=[336], win=8
-[Simulation] DELAY packet seq=337 for 50ms
-[Receive] Data packet seq=337, length=8172, window[335,342]
-[Send] ACK+SACK packet ack=335, SACK blocks=[336,337], win=8
-[Simulation] DELAY packet seq=335 for 50ms
-[Receive] Data packet seq=335, length=8172, window[335,342]
-[Window Slide] base: 335 -> 338
-[Send] ACK packet ack=338, win=8
-[Simulation] DELAY packet seq=338 for 50ms
-[Receive] Data packet seq=338, length=8172, window[338,345]
-[Window Slide] base: 338 -> 339
-[Send] ACK packet ack=339, win=8
-[Simulation] DELAY packet seq=339 for 50ms
-[Receive] Data packet seq=339, length=8172, window[339,346]
-[Window Slide] base: 339 -> 340
-[Send] ACK packet ack=340, win=8
-[Simulation] DELAY packet seq=340 for 50ms
-[Receive] Data packet seq=340, length=8172, window[340,347]
-[Window Slide] base: 340 -> 341
-[Send] ACK packet ack=341, win=8
-[Simulation] DELAY packet seq=341 for 50ms
-[Receive] Data packet seq=341, length=8172, window[341,348]
-[Window Slide] base: 341 -> 342
-[Send] ACK packet ack=342, win=8
-[Simulation] DELAY packet seq=342 for 50ms
-[Receive] Data packet seq=342, length=8172, window[342,349]
-[Window Slide] base: 342 -> 343
-[Send] ACK packet ack=343, win=8
-[Simulation] DELAY packet seq=343 for 50ms
-[Receive] Data packet seq=343, length=8172, window[343,350]
-[Window Slide] base: 343 -> 344
-[Send] ACK packet ack=344, win=8
-[Simulation] DELAY packet seq=344 for 50ms
-[Receive] Data packet seq=344, length=8172, window[344,351]
-[Window Slide] base: 344 -> 345
-[Send] ACK packet ack=345, win=8
-[Simulation] DELAY packet seq=345 for 50ms
-[Receive] Data packet seq=345, length=8172, window[345,352]
-[Window Slide] base: 345 -> 346
-[Send] ACK packet ack=346, win=8
-[Simulation] DELAY packet seq=346 for 50ms
-[Receive] Data packet seq=346, length=8172, window[346,353]
-[Window Slide] base: 346 -> 347
-[Send] ACK packet ack=347, win=8
-[Simulation] DELAY packet seq=347 for 50ms
-[Receive] Data packet seq=347, length=8172, window[347,354]
-[Window Slide] base: 347 -> 348
-[Send] ACK packet ack=348, win=8
-[Simulation] DELAY packet seq=348 for 50ms
-[Receive] Data packet seq=348, length=8172, window[348,355]
-[Window Slide] base: 348 -> 349
-[Send] ACK packet ack=349, win=8
-[Simulation] DELAY packet seq=349 for 50ms
-[Receive] Data packet seq=349, length=8172, window[349,356]
-[Window Slide] base: 349 -> 350
-[Send] ACK packet ack=350, win=8
-[Simulation] DELAY packet seq=350 for 50ms
-[Receive] Data packet seq=350, length=8172, window[350,357]
-[Window Slide] base: 350 -> 351
-[Send] ACK packet ack=351, win=8
-[Simulation] DELAY packet seq=351 for 50ms
-[Receive] Data packet seq=351, length=8172, window[351,358]
-[Window Slide] base: 351 -> 352
-[Send] ACK packet ack=352, win=8
-[Simulation] DELAY packet seq=352 for 50ms
-[Receive] Data packet seq=352, length=8172, window[352,359]
-[Window Slide] base: 352 -> 353
-[Send] ACK packet ack=353, win=8
-[Simulation] DELAY packet seq=353 for 50ms
-[Receive] Data packet seq=353, length=8172, window[353,360]
-[Window Slide] base: 353 -> 354
-[Send] ACK packet ack=354, win=8
-[Simulation] DELAY packet seq=354 for 50ms
-[Receive] Data packet seq=354, length=8172, window[354,361]
-[Window Slide] base: 354 -> 355
-[Send] ACK packet ack=355, win=8
-[Simulation] DELAY packet seq=355 for 50ms
-[Receive] Data packet seq=355, length=8172, window[355,362]
-[Window Slide] base: 355 -> 356
-[Send] ACK packet ack=356, win=8
-[Simulation] DROPPED packet seq=356 (random=1, threshold=10)
-[Simulation] DELAY packet seq=357 for 50ms
-[Receive] Data packet seq=357, length=8172, window[356,363]
-[Send] ACK+SACK packet ack=356, SACK blocks=[357], win=8
-[Simulation] DELAY packet seq=358 for 50ms
-[Receive] Data packet seq=358, length=8172, window[356,363]
-[Send] ACK+SACK packet ack=356, SACK blocks=[357,358], win=8
-[Simulation] DELAY packet seq=359 for 50ms
-[Receive] Data packet seq=359, length=8172, window[356,363]
-[Send] ACK+SACK packet ack=356, SACK blocks=[357,358,359], win=8
-[Simulation] DROPPED packet seq=360 (random=2, threshold=10)
-[Simulation] DELAY packet seq=361 for 50ms
-[Receive] Data packet seq=361, length=8172, window[356,363]
-[Send] ACK+SACK packet ack=356, SACK blocks=[357,358,359,361], win=8
-[Simulation] DELAY packet seq=356 for 50ms
-[Receive] Data packet seq=356, length=8172, window[356,363]
-[Window Slide] base: 356 -> 360
-[Send] ACK+SACK packet ack=360, SACK blocks=[361], win=8
-[Simulation] DELAY packet seq=362 for 50ms
-[Receive] Data packet seq=362, length=8172, window[360,367]
-[Send] ACK+SACK packet ack=360, SACK blocks=[361,362], win=8
-[Simulation] DELAY packet seq=360 for 50ms
-[Receive] Data packet seq=360, length=8172, window[360,367]
-[Window Slide] base: 360 -> 363
-[Send] ACK packet ack=363, win=8
-[Simulation] DROPPED packet seq=363 (random=5, threshold=10)
-[Simulation] DELAY packet seq=364 for 50ms
-[Receive] Data packet seq=364, length=8172, window[363,370]
-[Send] ACK+SACK packet ack=363, SACK blocks=[364], win=8
-[Simulation] DROPPED packet seq=363 (random=9, threshold=10)
-[Simulation] DELAY packet seq=363 for 50ms
-[Receive] Data packet seq=363, length=8172, window[363,370]
-[Window Slide] base: 363 -> 365
-[Send] ACK packet ack=365, win=8
-[Simulation] DELAY packet seq=365 for 50ms
-[Receive] Data packet seq=365, length=8172, window[365,372]
-[Window Slide] base: 365 -> 366
-[Send] ACK packet ack=366, win=8
-[Simulation] DROPPED packet seq=366 (random=5, threshold=10)
-[Simulation] DELAY packet seq=367 for 50ms
-[Receive] Data packet seq=367, length=8172, window[366,373]
-[Send] ACK+SACK packet ack=366, SACK blocks=[367], win=8
-[Simulation] DELAY packet seq=368 for 50ms
-[Receive] Data packet seq=368, length=8172, window[366,373]
-[Send] ACK+SACK packet ack=366, SACK blocks=[367,368], win=8
-[Simulation] DELAY packet seq=366 for 50ms
-[Receive] Data packet seq=366, length=8172, window[366,373]
-[Window Slide] base: 366 -> 369
-[Send] ACK packet ack=369, win=8
-[Simulation] DELAY packet seq=369 for 50ms
-[Receive] Data packet seq=369, length=8172, window[369,376]
-[Window Slide] base: 369 -> 370
-[Send] ACK packet ack=370, win=8
-[Simulation] DELAY packet seq=370 for 50ms
-[Receive] Data packet seq=370, length=8172, window[370,377]
-[Window Slide] base: 370 -> 371
-[Send] ACK packet ack=371, win=8
-[Simulation] DELAY packet seq=371 for 50ms
-[Receive] Data packet seq=371, length=8172, window[371,378]
-[Window Slide] base: 371 -> 372
-[Send] ACK packet ack=372, win=8
-[Simulation] DELAY packet seq=372 for 50ms
-[Receive] Data packet seq=372, length=8172, window[372,379]
-[Window Slide] base: 372 -> 373
-[Send] ACK packet ack=373, win=8
-[Simulation] DELAY packet seq=373 for 50ms
-[Receive] Data packet seq=373, length=8172, window[373,380]
-[Window Slide] base: 373 -> 374
-[Send] ACK packet ack=374, win=8
-[Simulation] DELAY packet seq=374 for 50ms
-[Receive] Data packet seq=374, length=8172, window[374,381]
-[Window Slide] base: 374 -> 375
-[Send] ACK packet ack=375, win=8
-[Simulation] DELAY packet seq=375 for 50ms
-[Receive] Data packet seq=375, length=8172, window[375,382]
-[Window Slide] base: 375 -> 376
-[Send] ACK packet ack=376, win=8
-[Simulation] DELAY packet seq=376 for 50ms
-[Receive] Data packet seq=376, length=8172, window[376,383]
-[Window Slide] base: 376 -> 377
-[Send] ACK packet ack=377, win=8
-[Simulation] DELAY packet seq=377 for 50ms
-[Receive] Data packet seq=377, length=8172, window[377,384]
-[Window Slide] base: 377 -> 378
-[Send] ACK packet ack=378, win=8
-[Simulation] DELAY packet seq=378 for 50ms
-[Receive] Data packet seq=378, length=8172, window[378,385]
-[Window Slide] base: 378 -> 379
-[Send] ACK packet ack=379, win=8
-[Simulation] DELAY packet seq=379 for 50ms
-[Receive] Data packet seq=379, length=8172, window[379,386]
-[Window Slide] base: 379 -> 380
-[Send] ACK packet ack=380, win=8
-[Simulation] DELAY packet seq=380 for 50ms
-[Receive] Data packet seq=380, length=8172, window[380,387]
-[Window Slide] base: 380 -> 381
-[Send] ACK packet ack=381, win=8
-[Simulation] DELAY packet seq=381 for 50ms
-[Receive] Data packet seq=381, length=8172, window[381,388]
-[Window Slide] base: 381 -> 382
-[Send] ACK packet ack=382, win=8
-[Simulation] DROPPED packet seq=382 (random=3, threshold=10)
-[Simulation] DELAY packet seq=383 for 50ms
-[Receive] Data packet seq=383, length=8172, window[382,389]
-[Send] ACK+SACK packet ack=382, SACK blocks=[383], win=8
-[Simulation] DROPPED packet seq=384 (random=2, threshold=10)
-[Simulation] DELAY packet seq=385 for 50ms
-[Receive] Data packet seq=385, length=8172, window[382,389]
-[Send] ACK+SACK packet ack=382, SACK blocks=[383,385], win=8
-[Simulation] DELAY packet seq=386 for 50ms
-[Receive] Data packet seq=386, length=8172, window[382,389]
-[Send] ACK+SACK packet ack=382, SACK blocks=[383,385,386], win=8
-[Simulation] DELAY packet seq=382 for 50ms
-[Receive] Data packet seq=382, length=8172, window[382,389]
-[Window Slide] base: 382 -> 384
-[Send] ACK+SACK packet ack=384, SACK blocks=[385,386], win=8
-[Simulation] DELAY packet seq=384 for 50ms
-[Receive] Data packet seq=384, length=8172, window[384,391]
-[Window Slide] base: 384 -> 387
-[Send] ACK packet ack=387, win=8
-[Simulation] DELAY packet seq=387 for 50ms
-[Receive] Data packet seq=387, length=8172, window[387,394]
-[Window Slide] base: 387 -> 388
-[Send] ACK packet ack=388, win=8
-[Simulation] DELAY packet seq=388 for 50ms
-[Receive] Data packet seq=388, length=8172, window[388,395]
-[Window Slide] base: 388 -> 389
-[Send] ACK packet ack=389, win=8
-[Simulation] DELAY packet seq=389 for 50ms
-[Receive] Data packet seq=389, length=8172, window[389,396]
-[Window Slide] base: 389 -> 390
-[Send] ACK packet ack=390, win=8
-[Simulation] DELAY packet seq=390 for 50ms
-[Receive] Data packet seq=390, length=8172, window[390,397]
-[Window Slide] base: 390 -> 391
-[Send] ACK packet ack=391, win=8
-[Simulation] DELAY packet seq=391 for 50ms
-[Receive] Data packet seq=391, length=8172, window[391,398]
-[Window Slide] base: 391 -> 392
-[Send] ACK packet ack=392, win=8
-[Simulation] DELAY packet seq=392 for 50ms
-[Receive] Data packet seq=392, length=8172, window[392,399]
-[Window Slide] base: 392 -> 393
-[Send] ACK packet ack=393, win=8
-[Simulation] DELAY packet seq=393 for 50ms
-[Receive] Data packet seq=393, length=8172, window[393,400]
-[Window Slide] base: 393 -> 394
-[Send] ACK packet ack=394, win=8
-[Simulation] DELAY packet seq=394 for 50ms
-[Receive] Data packet seq=394, length=8172, window[394,401]
-[Window Slide] base: 394 -> 395
-[Send] ACK packet ack=395, win=8
-[Simulation] DELAY packet seq=395 for 50ms
-[Receive] Data packet seq=395, length=8172, window[395,402]
-[Window Slide] base: 395 -> 396
-[Send] ACK packet ack=396, win=8
-[Simulation] DELAY packet seq=396 for 50ms
-[Receive] Data packet seq=396, length=8172, window[396,403]
-[Window Slide] base: 396 -> 397
-[Send] ACK packet ack=397, win=8
-[Simulation] DELAY packet seq=397 for 50ms
-[Receive] Data packet seq=397, length=8172, window[397,404]
-[Window Slide] base: 397 -> 398
-[Send] ACK packet ack=398, win=8
-[Simulation] DELAY packet seq=398 for 50ms
-[Receive] Data packet seq=398, length=8172, window[398,405]
-[Window Slide] base: 398 -> 399
-[Send] ACK packet ack=399, win=8
-[Simulation] DELAY packet seq=399 for 50ms
-[Receive] Data packet seq=399, length=8172, window[399,406]
-[Window Slide] base: 399 -> 400
-[Send] ACK packet ack=400, win=8
-[Simulation] DELAY packet seq=400 for 50ms
-[Receive] Data packet seq=400, length=8172, window[400,407]
-[Window Slide] base: 400 -> 401
-[Send] ACK packet ack=401, win=8
-[Simulation] DELAY packet seq=401 for 50ms
-[Receive] Data packet seq=401, length=8172, window[401,408]
-[Window Slide] base: 401 -> 402
-[Send] ACK packet ack=402, win=8
-[Simulation] DELAY packet seq=402 for 50ms
-[Receive] Data packet seq=402, length=8172, window[402,409]
-[Window Slide] base: 402 -> 403
-[Send] ACK packet ack=403, win=8
-[Simulation] DROPPED packet seq=403 (random=3, threshold=10)
-[Simulation] DELAY packet seq=404 for 50ms
-[Receive] Data packet seq=404, length=8172, window[403,410]
-[Send] ACK+SACK packet ack=403, SACK blocks=[404], win=8
-[Simulation] DELAY packet seq=405 for 50ms
-[Receive] Data packet seq=405, length=8172, window[403,410]
-[Send] ACK+SACK packet ack=403, SACK blocks=[404,405], win=8
-[Simulation] DELAY packet seq=406 for 50ms
-[Receive] Data packet seq=406, length=8172, window[403,410]
-[Send] ACK+SACK packet ack=403, SACK blocks=[404,405,406], win=8
-[Simulation] DELAY packet seq=407 for 50ms
-[Receive] Data packet seq=407, length=8172, window[403,410]
-[Send] ACK+SACK packet ack=403, SACK blocks=[404,405,406,407], win=8
-[Simulation] DROPPED packet seq=408 (random=9, threshold=10)
-[Simulation] DELAY packet seq=403 for 50ms
-[Receive] Data packet seq=403, length=8172, window[403,410]
-[Window Slide] base: 403 -> 408
-[Send] ACK packet ack=408, win=8
-[Simulation] DELAY packet seq=409 for 50ms
-[Receive] Data packet seq=409, length=8172, window[408,415]
-[Send] ACK+SACK packet ack=408, SACK blocks=[409], win=8
-[Simulation] DROPPED packet seq=410 (random=0, threshold=10)
-[Simulation] DROPPED packet seq=408 (random=7, threshold=10)
-[Simulation] DELAY packet seq=410 for 50ms
-[Receive] Data packet seq=410, length=8172, window[408,415]
-[Send] ACK+SACK packet ack=408, SACK blocks=[409,410], win=8
-[Simulation] DELAY packet seq=408 for 50ms
-[Receive] Data packet seq=408, length=8172, window[408,415]
-[Window Slide] base: 408 -> 411
-[Send] ACK packet ack=411, win=8
-[Simulation] DELAY packet seq=411 for 50ms
-[Receive] Data packet seq=411, length=8172, window[411,418]
-[Window Slide] base: 411 -> 412
-[Send] ACK packet ack=412, win=8
-[Simulation] DELAY packet seq=412 for 50ms
-[Receive] Data packet seq=412, length=8172, window[412,419]
-[Window Slide] base: 412 -> 413
-[Send] ACK packet ack=413, win=8
-[Simulation] DELAY packet seq=413 for 50ms
-[Receive] Data packet seq=413, length=8172, window[413,420]
-[Window Slide] base: 413 -> 414
-[Send] ACK packet ack=414, win=8
-[Simulation] DELAY packet seq=414 for 50ms
-[Receive] Data packet seq=414, length=8172, window[414,421]
-[Window Slide] base: 414 -> 415
-[Send] ACK packet ack=415, win=8
-[Simulation] DELAY packet seq=415 for 50ms
-[Receive] Data packet seq=415, length=8172, window[415,422]
-[Window Slide] base: 415 -> 416
-[Send] ACK packet ack=416, win=8
-[Simulation] DELAY packet seq=416 for 50ms
-[Receive] Data packet seq=416, length=8172, window[416,423]
-[Window Slide] base: 416 -> 417
-[Send] ACK packet ack=417, win=8
-[Simulation] DELAY packet seq=417 for 50ms
-[Receive] Data packet seq=417, length=8172, window[417,424]
-[Window Slide] base: 417 -> 418
-[Send] ACK packet ack=418, win=8
-[Simulation] DELAY packet seq=418 for 50ms
-[Receive] Data packet seq=418, length=8172, window[418,425]
-[Window Slide] base: 418 -> 419
-[Send] ACK packet ack=419, win=8
-[Simulation] DELAY packet seq=419 for 50ms
-[Receive] Data packet seq=419, length=8172, window[419,426]
-[Window Slide] base: 419 -> 420
-[Send] ACK packet ack=420, win=8
-[Simulation] DELAY packet seq=420 for 50ms
-[Receive] Data packet seq=420, length=8172, window[420,427]
-[Window Slide] base: 420 -> 421
-[Send] ACK packet ack=421, win=8
-[Simulation] DROPPED packet seq=421 (random=8, threshold=10)
-[Simulation] DROPPED packet seq=422 (random=1, threshold=10)
-[Simulation] DELAY packet seq=423 for 50ms
-[Receive] Data packet seq=423, length=8172, window[421,428]
-[Send] ACK+SACK packet ack=421, SACK blocks=[423], win=8
-[Simulation] DELAY packet seq=424 for 50ms
-[Receive] Data packet seq=424, length=8172, window[421,428]
-[Send] ACK+SACK packet ack=421, SACK blocks=[423,424], win=8
-[Simulation] DELAY packet seq=425 for 50ms
-[Receive] Data packet seq=425, length=8172, window[421,428]
-[Send] ACK+SACK packet ack=421, SACK blocks=[423,424,425], win=8
-[Simulation] DELAY packet seq=421 for 50ms
-[Receive] Data packet seq=421, length=8172, window[421,428]
-[Window Slide] base: 421 -> 422
-[Send] ACK+SACK packet ack=422, SACK blocks=[423,424,425], win=8
-[Simulation] DELAY packet seq=422 for 50ms
-[Receive] Data packet seq=422, length=8172, window[422,429]
-[Window Slide] base: 422 -> 426
-[Send] ACK packet ack=426, win=8
-[Simulation] DELAY packet seq=426 for 50ms
-[Receive] Data packet seq=426, length=8172, window[426,433]
-[Window Slide] base: 426 -> 427
-[Send] ACK packet ack=427, win=8
-[Simulation] DELAY packet seq=427 for 50ms
-[Receive] Data packet seq=427, length=8172, window[427,434]
-[Window Slide] base: 427 -> 428
-[Send] ACK packet ack=428, win=8
-[Simulation] DELAY packet seq=428 for 50ms
-[Receive] Data packet seq=428, length=8172, window[428,435]
-[Window Slide] base: 428 -> 429
-[Send] ACK packet ack=429, win=8
-[Simulation] DELAY packet seq=429 for 50ms
-[Receive] Data packet seq=429, length=8172, window[429,436]
-[Window Slide] base: 429 -> 430
-[Send] ACK packet ack=430, win=8
-[Simulation] DELAY packet seq=430 for 50ms
-[Receive] Data packet seq=430, length=8172, window[430,437]
-[Window Slide] base: 430 -> 431
-[Send] ACK packet ack=431, win=8
-[Simulation] DELAY packet seq=431 for 50ms
-[Receive] Data packet seq=431, length=5064, window[431,438]
-[Window Slide] base: 431 -> 432
-[Send] ACK packet ack=432, win=8
-[Timeout] Waiting for data packet timeout (1/3)
-[Timeout] Waiting for data packet timeout (2/3)
-[Receive] FIN packet seq=432
+[Receive] FIN packet seq=230
+
+[Summary] File received, 1048325 bytes
+[Save] File saved to: receive\1.jpg
 
 [Info] Received FIN from client, closing connection...
 
 [Four-way Handshake] Received client close request...
 [State Transition] ESTABLISHED -> CLOSE_WAIT
-[Sent] ACK packet (ack=433)
+[Sent] ACK packet (ack=231)
 [State Transition] CLOSE_WAIT -> LAST_ACK
 [Sent] FIN packet (seq=1)
 [Received] ACK packet (ack=2)
@@ -1746,10 +924,10 @@ Waiting for client messages...
 
 
 ========== Server Transmission Statistics ==========
-Total Packets Received: 206
-Total Packets Dropped (simulated): 21
-Transmission Time: 32.335 seconds
-Average Throughput: 100.015 KB/s
+Total Packets Received: 228
+Total Packets Dropped (simulated): 9
+Transmission Time: 5.497 seconds
+Average Throughput: 329.966 KB/s
 ====================================================
 
 [Success] Connection closed successfully

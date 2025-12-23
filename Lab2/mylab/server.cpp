@@ -2,23 +2,30 @@
 #include <fstream>
 #include <cstdlib>     // rand(), srand()
 #include <ctime>       // time()
+#include <string>      // std::string
 #include <winsock2.h>  // Windows Socket API头文件
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
 #include "server.h"    // 引入服务端头文件（包含config.h和protocol.h）
 
 #pragma comment(lib, "ws2_32.lib")  // 链接WS2_32.lib库
 
-// 注意：PORT、BUFFER_SIZE等常量已在config.h中定义
+// ===== 接收文件保存目录 =====
+const char* RECEIVE_DIR = "receive";
 
-// ===== 全局接收窗口 =====
-// 描述：用于管理流水线接收的滑动窗口状态
+// 全局变量：当前接收的文件名
+std::string g_currentFilename;
+
+// 全局缓冲区：存储接收到的文件数据
+static char g_receivedFileData[1024 * 1024];  // 1MB缓冲区
+static int g_receivedFileLen = 0;
+
+// 全局接收窗口：管理流水线接收的滑动窗口状态
 RecvWindow g_recvWindow;
 
-// ===== 模拟日志文件流 =====
-// 描述：用于记录丢包和延迟信息
+// 模拟日志文件流：记录丢包和延迟信息
 std::ofstream g_simulationLog;
 
-// ===== 初始化模拟日志 =====
+// 初始化模拟日志
 void initSimulationLog() {
     g_simulationLog.open("simulation.txt", std::ios::out | std::ios::trunc);
     if (g_simulationLog.is_open()) {
@@ -32,7 +39,7 @@ void initSimulationLog() {
     }
 }
 
-// ===== 关闭模拟日志 =====
+// 关闭模拟日志
 void closeSimulationLog() {
     if (g_simulationLog.is_open()) {
         g_simulationLog << std::endl << "========== 模拟日志结束 ==========" << std::endl;
@@ -40,10 +47,7 @@ void closeSimulationLog() {
     }
 }
 
-// ===== 模拟丢包检查 =====
-// 描述：根据配置的丢包率决定是否丢弃当前数据包
-// 参数：recvSeq - 接收到的序列号
-// 返回值：true表示应该丢弃该包，false表示正常处理
+// 模拟丢包检查：根据配置的丢包率决定是否丢弃当前数据包
 bool shouldDropPacket(uint32_t recvSeq) {
     if (!SIMULATE_LOSS_ENABLED || SIMULATE_LOSS_RATE <= 0) {
         return false;
@@ -64,9 +68,7 @@ bool shouldDropPacket(uint32_t recvSeq) {
     return false;
 }
 
-// ===== 模拟延迟 =====
-// 描述：根据配置的延迟时间进行延迟处理
-// 参数：recvSeq - 接收到的序列号
+// 模拟延迟：根据配置的延迟时间进行延迟处理
 void simulateDelay(uint32_t recvSeq) {
     if (!SIMULATE_DELAY_ENABLED || SIMULATE_DELAY_MS <= 0) {
         return;
@@ -81,15 +83,7 @@ void simulateDelay(uint32_t recvSeq) {
     Sleep(SIMULATE_DELAY_MS);
 }
 
-// ===== 发送ACK/SACK响应 =====
-// 描述：发送确认包，支持累积确认和选择确认
-// 参数：
-//   serverSocket - 服务端套接字
-//   clientAddr   - 客户端地址
-//   addrLen      - 地址结构长度
-//   ackNum       - 确认号（期望接收的下一个序列号）
-//   serverSeq    - 服务端序列号
-//   useSACK      - 是否使用选择确认
+// 发送ACK/SACK响应：支持累积确认和选择确认
 void sendACK(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
              uint32_t ackNum, uint32_t serverSeq, bool useSACK) {
     Packet ackPacket;
@@ -130,19 +124,12 @@ void sendACK(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
           (sockaddr*)&clientAddr, addrLen);
 }
 
-// ===== 流水线接收数据函数（支持SACK） =====
-// 描述：使用滑动窗口接收数据，支持选择确认和固定窗口流量控制
-// 参数：
-//   serverSocket - 服务端套接字
-//   clientAddr   - 客户端地址
-//   addrLen      - 地址结构长度
-//   baseSeq      - 起始序列号（期望接收的第一个包序列号）
-//   serverSeq    - 服务端序列号（用于发送ACK）
-//   finReceived  - 输出参数：是否收到FIN包
-//   finSeq       - 输出参数：FIN包的序列号
-// 返回值：接收到的总数据长度，失败返回-1
+// 流水线接收数据（支持SACK）：使用滑动窗口接收数据
+// outBuffer: 输出缓冲区，用于存储接收到的数据
+// outBufferSize: 输出缓冲区大小
 int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
-                 uint32_t baseSeq, uint32_t& serverSeq, bool& finReceived, uint32_t& finSeq) {
+                 uint32_t baseSeq, uint32_t& serverSeq, bool& finReceived, uint32_t& finSeq,
+                 char* outBuffer, int outBufferSize) {
     // 初始化接收窗口
     g_recvWindow.reset(baseSeq);
     
@@ -151,7 +138,6 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
     finSeq = 0;
     
     // 存储接收到的完整数据
-    static char receivedData[8192];
     int totalReceived = 0;
     
     std::cout << "\n[Pipeline Receive] Starting to receive data, window size=" << FIXED_WINDOW_SIZE 
@@ -228,7 +214,7 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
                 g_recvWindow.is_received[idx] = 1;
                 
                 // 更新接收字节数
-                g_recvWindow.total_bytes_received += recvPacket.dataLen;
+                //g_recvWindow.total_bytes_received += recvPacket.dataLen;这里重复更新不会产生问题吗？
                 
                 // 更新接收字节数
                 g_recvWindow.total_bytes_received += recvPacket.dataLen;
@@ -250,8 +236,8 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
             
             // 尝试滑动窗口并取出连续数据
             uint32_t oldBase = g_recvWindow.base;
-            int dataLen = g_recvWindow.slideAndGetData(receivedData + totalReceived, 
-                                                       sizeof(receivedData) - totalReceived);
+            int dataLen = g_recvWindow.slideAndGetData(outBuffer + totalReceived, 
+                                                       outBufferSize - totalReceived);
             totalReceived += dataLen;
             
             if (g_recvWindow.base > oldBase) {
@@ -287,8 +273,7 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
     return totalReceived;
 }
 
-// ===== 服务端处理三次握手 =====
-// 返回值：true表示连接建立成功，false表示失败
+// 服务端三次握手：处理客户端连接请求
 bool acceptConnection(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t& clientSeq, uint32_t& serverSeq) {
     ConnectionState state = CLOSED;
     std::cout << "\n[Three-way Handshake] Waiting for client connection..." << std::endl;
@@ -390,8 +375,7 @@ bool acceptConnection(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t& cl
     return false;
 }
 
-// ===== 服务端处理四次挥手（被动关闭） =====
-// 返回值：true表示关闭成功，false表示失败
+// 服务端四次挥手（被动关闭）：处理客户端关闭请求
 bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSeq, uint32_t serverSeq) {
     ConnectionState state = ESTABLISHED;
     std::cout << "\n[Four-way Handshake] Received client close request..." << std::endl;
@@ -596,41 +580,92 @@ int main() {
     std::cout << "\n===== Pipeline Receive Mode (window size=" << FIXED_WINDOW_SIZE << ") =====" << std::endl;
     std::cout << "[Server] Ready to receive file transfers from client..." << std::endl;
     
-    // 循环接收文件传输
+    // 单文件传输模式
     int clientAddrLen = sizeof(clientAddr);
-    bool connectionActive = true;
-    int fileCount = 0;  // 已接收文件计数
+    bool finReceived = false;
+    uint32_t finSeq = 0;
     
-    while (connectionActive) {
-        bool finReceived = false;
-        uint32_t finSeq = 0;
-        
-        // 使用流水线方式接收数据
-        int receivedLen = pipelineRecv(serverSocket, clientAddr, clientAddrLen, clientSeq, serverSeq, finReceived, finSeq);
-        
-        if (receivedLen > 0) {
-            fileCount++;
-            //std::cout << "\n[Summary] File #" << fileCount << " received, " << receivedLen << " bytes" << std::endl;
-            // 更新序列号，准备接收下一个文件
-            clientSeq = g_recvWindow.base;
-        } else if (receivedLen == 0 && !finReceived) {
-            // 没有收到数据，可能是超时
-            std::cout << "[Info] No data received, waiting for next transfer..." << std::endl;
-        }
-        
-        // 如果收到了FIN包，处理四次挥手并退出循环
-        if (finReceived) {
-            std::cout << "\n[Info] Received FIN from client, closing connection..." << std::endl;
-            clientSeq = finSeq;
-            if (handleClose(serverSocket, clientAddr, clientSeq, serverSeq)) {
-                std::cout << "[Success] Connection closed successfully" << std::endl;
+    // 步骤1：首先接收文件名包
+    std::cout << "\n[Server] Waiting for filename..." << std::endl;
+    
+    char recvBuffer[MAX_PACKET_SIZE];
+    int timeout = 10000;  // 10秒超时
+    setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    
+    sockaddr_in fromAddr;
+    int fromAddrLen = sizeof(fromAddr);
+    int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
+                                 (sockaddr*)&fromAddr, &fromAddrLen);
+    
+    if (bytesReceived > 0) {
+        Packet fnPacket;
+        if (fnPacket.deserialize(recvBuffer, bytesReceived)) {
+            // 检查是否是文件名包（以"FILENAME:"开头）
+            std::string data(fnPacket.data, fnPacket.dataLen);
+            if (data.find("FILENAME:") == 0) {
+                g_currentFilename = data.substr(9);  // 提取文件名
+                std::cout << "[Receive] Filename: " << g_currentFilename << std::endl;
+                
+                // 发送ACK确认
+                Packet ackPacket;
+                ackPacket.header.seq = serverSeq;
+                ackPacket.header.ack = fnPacket.header.seq + 1;
+                ackPacket.header.flag = FLAG_ACK;
+                ackPacket.dataLen = 0;
+                ackPacket.header.len = 0;
+                ackPacket.header.calculateChecksum(ackPacket.data, 0);
+                
+                char sendBuffer[MAX_PACKET_SIZE];
+                ackPacket.serialize(sendBuffer);
+                sendto(serverSocket, sendBuffer, ackPacket.getTotalLen(), 0,
+                      (sockaddr*)&clientAddr, clientAddrLen);
+                
+                std::cout << "[Send] Filename ACK" << std::endl;
+                
+                // 更新序列号
+                clientSeq = fnPacket.header.seq + 1;
             }
-            connectionActive = false;
-            break;
         }
     }
     
-    //std::cout << "\n[Summary] Total files received: " << fileCount << std::endl;
+    // 步骤2：使用流水线方式接收文件数据
+    g_receivedFileLen = 0;
+    int receivedLen = pipelineRecv(serverSocket, clientAddr, clientAddrLen, clientSeq, serverSeq, 
+                                   finReceived, finSeq, g_receivedFileData, sizeof(g_receivedFileData));
+    
+    if (receivedLen > 0) {
+        g_receivedFileLen = receivedLen;
+        std::cout << "\n[Summary] File received, " << receivedLen << " bytes" << std::endl;
+        
+        // 保存文件到receive文件夹
+        if (!g_currentFilename.empty()) {
+            std::string savePath = std::string(RECEIVE_DIR) + "\\" + g_currentFilename;
+            std::ofstream outFile(savePath, std::ios::binary | std::ios::trunc);
+            if (outFile.is_open()) {
+                outFile.write(g_receivedFileData, g_receivedFileLen);
+                outFile.close();
+                std::cout << "[Save] File saved to: " << savePath << std::endl;
+            } else {
+                std::cerr << "[Error] Failed to save file: " << savePath << std::endl;
+            }
+        } else {
+            std::cerr << "[Warning] No filename received, cannot save file" << std::endl;
+        }
+        
+        // 更新序列号
+        clientSeq = g_recvWindow.base;
+    } else if (receivedLen == 0 && !finReceived) {
+        std::cout << "[Info] No data received" << std::endl;
+    }
+    
+    // 步骤3：如果收到了FIN包，处理四次挥手
+    if (finReceived) {
+        std::cout << "\n[Info] Received FIN from client, closing connection..." << std::endl;
+        clientSeq = finSeq;
+        if (handleClose(serverSocket, clientAddr, clientSeq, serverSeq)) {
+            std::cout << "[Success] Connection closed successfully" << std::endl;
+        }
+    }
 
     // 7. 清理资源
     closeSimulationLog();  // 关闭模拟日志
