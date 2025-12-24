@@ -1,0 +1,894 @@
+
+[Three-way Handshake] Starting connection establishment...
+[State Transition] CLOSED -> SYN_SENT
+[Sent] SYN packet (seq=0, retry count=0)
+[Received] SYN+ACK packet (seq=0, ack=1)
+[Sent] ACK packet (seq=1, ack=1)
+[State Transition] SYN_SENT -> ESTABLISHED
+[Success] Connection established!
+
+
+===== Single File Transfer Mode (window size=32) =====
+[RENO] RENO congestion control enabled
+
+========== testfile Directory Files ==========
+  [1] 1.jpg
+  [2] 2.jpg
+  [3] 3.jpg
+  [4] helloworld.txt
+===============================================
+Please enter the filename to transfer: [Info] Read file '1.jpg', size: 1857353 bytes
+
+[Transfer] Starting transfer of '1.jpg'...
+
+[Pipeline Send] Starting to send data, total length=1857353, total packets=228, initial window size=32
+[RENO] Initial state: cwnd=1, ssthresh=16, phase=SLOW_START
+[Send] Data packet seq=1, length=8172, window[1,1], cwnd=1
+[Receive] ACK packet ack=2[RENO] Slow Start: cwnd=2, ssthresh=16
+
+[Window Slide] base: 1 -> 2
+[Send] Data packet seq=2, length=8172, window[2,3], cwnd=2
+[Send] Data packet seq=3, length=8172, window[2,3], cwnd=2
+[Receive] ACK packet ack=3[RENO] Slow Start: cwnd=3, ssthresh=16
+
+[Window Slide] base: 2 -> 3
+[Send] Data packet seq=4, length=8172, window[3,5], cwnd=3
+[Send] Data packet seq=5, length=8172, window[3,5], cwnd=3
+[Receive] ACK packet ack=4[RENO] Slow Start: cwnd=4, ssthresh=16
+
+[Window Slide] base: 3 -> 4
+[Send] Data packet seq=6, length=8172, window[4,7], cwnd=4
+[Send] Data packet seq=7, length=8172, window[4,7], cwnd=4
+[Receive] ACK packet ack=5[RENO] Slow Start: cwnd=5, ssthresh=16
+
+[Window Slide] base: 4 -> 5
+[Send] Data packet seq=8, length=8172, window[5,9], cwnd=5
+[Send] Data packet seq=9, length=8172, window[5,9], cwnd=5
+[Receive] ACK packet ack=5[RENO] Duplicate ACK received (count=1, ack=5)
+, SACK blocks=[6]
+
+[Receive] ACK packet ack=5[RENO] Duplicate ACK received (count=2, ack=5)
+, SACK blocks=[6,7]
+
+[Receive] ACK packet ack=5[RENO] Duplicate ACK received (count=3, ack=5)
+[RENO] Fast Retransmit triggered (3 duplicate ACKs)
+[RENO] Entering FAST_RECOVERY (cwnd=2, ssthresh=2)
+, SACK blocks=[6,7,8]
+
+[RENO] Fast Retransmit: retransmitting seq=5
+[Receive] ACK packet ack=5[RENO] Duplicate ACK received (count=4, ack=5)
+[RENO] Fast Recovery: cwnd inflated to 3
+, SACK blocks=[6,7,8,9]
+
+[Receive] ACK packet ack=10[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 5 -> 10
+[Send] Data packet seq=10, length=8172, window[10,11], cwnd=2
+[Send] Data packet seq=11, length=8172, window[10,11], cwnd=2
+[Receive] ACK packet ack=10[RENO] Duplicate ACK received (count=1, ack=10)
+, SACK blocks=[11]
+
+[RENO] Timeout detected
+[RENO] Timeout recovery: entering SLOW_START (cwnd=1, ssthresh=2)
+[Timeout Retransmit] seq=10, elapsed 558ms
+[Receive] ACK packet ack=12[RENO] Phase transition: SLOW_START -> CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 10 -> 12
+[Send] Data packet seq=12, length=8172, window[12,13], cwnd=2
+[Send] Data packet seq=13, length=8172, window[12,13], cwnd=2
+[Receive] ACK packet ack=13
+[Window Slide] base: 12 -> 13
+[Send] Data packet seq=14, length=8172, window[13,14], cwnd=2
+[Receive] ACK packet ack=14[RENO] Congestion Avoidance: cwnd increased to 3
+
+[Window Slide] base: 13 -> 14
+[Send] Data packet seq=15, length=8172, window[14,16], cwnd=3
+[Send] Data packet seq=16, length=8172, window[14,16], cwnd=3
+[Receive] ACK packet ack=15
+[Window Slide] base: 14 -> 15
+[Send] Data packet seq=17, length=8172, window[15,17], cwnd=3
+[Receive] ACK packet ack=16
+[Window Slide] base: 15 -> 16
+[Send] Data packet seq=18, length=8172, window[16,18], cwnd=3
+[Receive] ACK packet ack=17[RENO] Congestion Avoidance: cwnd increased to 4
+
+[Window Slide] base: 16 -> 17
+[Send] Data packet seq=19, length=8172, window[17,20], cwnd=4
+[Send] Data packet seq=20, length=8172, window[17,20], cwnd=4
+[Receive] ACK packet ack=18
+[Window Slide] base: 17 -> 18
+[Send] Data packet seq=21, length=8172, window[18,21], cwnd=4
+[Receive] ACK packet ack=19
+[Window Slide] base: 18 -> 19
+[Send] Data packet seq=22, length=8172, window[19,22], cwnd=4
+[Receive] ACK packet ack=20
+[Window Slide] base: 19 -> 20
+[Send] Data packet seq=23, length=8172, window[20,23], cwnd=4
+[Receive] ACK packet ack=21[RENO] Congestion Avoidance: cwnd increased to 5
+
+[Window Slide] base: 20 -> 21
+[Send] Data packet seq=24, length=8172, window[21,25], cwnd=5
+[Send] Data packet seq=25, length=8172, window[21,25], cwnd=5
+[Receive] ACK packet ack=22
+[Window Slide] base: 21 -> 22
+[Send] Data packet seq=26, length=8172, window[22,26], cwnd=5
+[Receive] ACK packet ack=23
+[Window Slide] base: 22 -> 23
+[Send] Data packet seq=27, length=8172, window[23,27], cwnd=5
+[Receive] ACK packet ack=24
+[Window Slide] base: 23 -> 24
+[Send] Data packet seq=28, length=8172, window[24,28], cwnd=5
+[Receive] ACK packet ack=25
+[Window Slide] base: 24 -> 25
+[Send] Data packet seq=29, length=8172, window[25,29], cwnd=5
+[Receive] ACK packet ack=26[RENO] Congestion Avoidance: cwnd increased to 6
+
+[Window Slide] base: 25 -> 26
+[Send] Data packet seq=30, length=8172, window[26,31], cwnd=6
+[Send] Data packet seq=31, length=8172, window[26,31], cwnd=6
+[Receive] ACK packet ack=27
+[Window Slide] base: 26 -> 27
+[Send] Data packet seq=32, length=8172, window[27,32], cwnd=6
+[Receive] ACK packet ack=28
+[Window Slide] base: 27 -> 28
+[Send] Data packet seq=33, length=8172, window[28,33], cwnd=6
+[Receive] ACK packet ack=29
+[Window Slide] base: 28 -> 29
+[Send] Data packet seq=34, length=8172, window[29,34], cwnd=6
+[Receive] ACK packet ack=30
+[Window Slide] base: 29 -> 30
+[Send] Data packet seq=35, length=8172, window[30,35], cwnd=6
+[Receive] ACK packet ack=31
+[Window Slide] base: 30 -> 31
+[Send] Data packet seq=36, length=8172, window[31,36], cwnd=6
+[Receive] ACK packet ack=32[RENO] Congestion Avoidance: cwnd increased to 7
+
+[Window Slide] base: 31 -> 32
+[Send] Data packet seq=37, length=8172, window[32,38], cwnd=7
+[Send] Data packet seq=38, length=8172, window[32,38], cwnd=7
+[Receive] ACK packet ack=33
+[Window Slide] base: 32 -> 33
+[Send] Data packet seq=39, length=8172, window[33,39], cwnd=7
+[Receive] ACK packet ack=34
+[Window Slide] base: 33 -> 34
+[Send] Data packet seq=40, length=8172, window[34,40], cwnd=7
+[Receive] ACK packet ack=35
+[Window Slide] base: 34 -> 35
+[Send] Data packet seq=41, length=8172, window[35,41], cwnd=7
+[Receive] ACK packet ack=36
+[Window Slide] base: 35 -> 36
+[Send] Data packet seq=42, length=8172, window[36,42], cwnd=7
+[Receive] ACK packet ack=37
+[Window Slide] base: 36 -> 37
+[Send] Data packet seq=43, length=8172, window[37,43], cwnd=7
+[Receive] ACK packet ack=38
+[Window Slide] base: 37 -> 38
+[Send] Data packet seq=44, length=8172, window[38,44], cwnd=7
+[Receive] ACK packet ack=39[RENO] Congestion Avoidance: cwnd increased to 8
+
+[Window Slide] base: 38 -> 39
+[Send] Data packet seq=45, length=8172, window[39,46], cwnd=8
+[Send] Data packet seq=46, length=8172, window[39,46], cwnd=8
+[Receive] ACK packet ack=40
+[Window Slide] base: 39 -> 40
+[Send] Data packet seq=47, length=8172, window[40,47], cwnd=8
+[Receive] ACK packet ack=41
+[Window Slide] base: 40 -> 41
+[Send] Data packet seq=48, length=8172, window[41,48], cwnd=8
+[Receive] ACK packet ack=42
+[Window Slide] base: 41 -> 42
+[Send] Data packet seq=49, length=8172, window[42,49], cwnd=8
+[Receive] ACK packet ack=42[RENO] Duplicate ACK received (count=1, ack=42)
+, SACK blocks=[43]
+
+[Receive] ACK packet ack=42[RENO] Duplicate ACK received (count=2, ack=42)
+, SACK blocks=[43,44]
+
+[Receive] ACK packet ack=42[RENO] Duplicate ACK received (count=3, ack=42)
+[RENO] Fast Retransmit triggered (3 duplicate ACKs)
+[RENO] Entering FAST_RECOVERY (cwnd=4, ssthresh=4)
+, SACK blocks=[43,44,46]
+
+[RENO] Fast Retransmit: retransmitting seq=42
+[Receive] ACK packet ack=42[RENO] Duplicate ACK received (count=4, ack=42)
+[RENO] Fast Recovery: cwnd inflated to 5
+, SACK blocks=[43,44,46,47]
+
+[Receive] ACK packet ack=42[RENO] Duplicate ACK received (count=5, ack=42)
+[RENO] Fast Recovery: cwnd inflated to 6
+, SACK blocks=[43,44,46,47]
+
+[Receive] ACK packet ack=42[RENO] Duplicate ACK received (count=6, ack=42)
+[RENO] Fast Recovery: cwnd inflated to 7
+, SACK blocks=[43,44,46,47]
+
+[Receive] ACK packet ack=45[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=4, ssthresh=4)
+, SACK blocks=[46,47,48,49]
+
+[Window Slide] base: 42 -> 45
+[RENO] Timeout detected
+[RENO] Timeout recovery: entering SLOW_START (cwnd=1, ssthresh=2)
+[Timeout Retransmit] seq=45, elapsed 588ms
+[Receive] ACK packet ack=50[RENO] Phase transition: SLOW_START -> CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 45 -> 50
+[Send] Data packet seq=50, length=8172, window[50,51], cwnd=2
+[Send] Data packet seq=51, length=8172, window[50,51], cwnd=2
+[Receive] ACK packet ack=51[RENO] Congestion Avoidance: cwnd increased to 3
+
+[Window Slide] base: 50 -> 51
+[Send] Data packet seq=52, length=8172, window[51,53], cwnd=3
+[Send] Data packet seq=53, length=8172, window[51,53], cwnd=3
+[Receive] ACK packet ack=52
+[Window Slide] base: 51 -> 52
+[Send] Data packet seq=54, length=8172, window[52,54], cwnd=3
+[Receive] ACK packet ack=53
+[Window Slide] base: 52 -> 53
+[Send] Data packet seq=55, length=8172, window[53,55], cwnd=3
+[Receive] ACK packet ack=54[RENO] Congestion Avoidance: cwnd increased to 4
+
+[Window Slide] base: 53 -> 54
+[Send] Data packet seq=56, length=8172, window[54,57], cwnd=4
+[Send] Data packet seq=57, length=8172, window[54,57], cwnd=4
+[Receive] ACK packet ack=55
+[Window Slide] base: 54 -> 55
+[Send] Data packet seq=58, length=8172, window[55,58], cwnd=4
+[Receive] ACK packet ack=56
+[Window Slide] base: 55 -> 56
+[Send] Data packet seq=59, length=8172, window[56,59], cwnd=4
+[Receive] ACK packet ack=57
+[Window Slide] base: 56 -> 57
+[Send] Data packet seq=60, length=8172, window[57,60], cwnd=4
+[Receive] ACK packet ack=58[RENO] Congestion Avoidance: cwnd increased to 5
+
+[Window Slide] base: 57 -> 58
+[Send] Data packet seq=61, length=8172, window[58,62], cwnd=5
+[Send] Data packet seq=62, length=8172, window[58,62], cwnd=5
+[Receive] ACK packet ack=59
+[Window Slide] base: 58 -> 59
+[Send] Data packet seq=63, length=8172, window[59,63], cwnd=5
+[Receive] ACK packet ack=60
+[Window Slide] base: 59 -> 60
+[Send] Data packet seq=64, length=8172, window[60,64], cwnd=5
+[Receive] ACK packet ack=61
+[Window Slide] base: 60 -> 61
+[Send] Data packet seq=65, length=8172, window[61,65], cwnd=5
+[Receive] ACK packet ack=62
+[Window Slide] base: 61 -> 62
+[Send] Data packet seq=66, length=8172, window[62,66], cwnd=5
+[Receive] ACK packet ack=63[RENO] Congestion Avoidance: cwnd increased to 6
+
+[Window Slide] base: 62 -> 63
+[Send] Data packet seq=67, length=8172, window[63,68], cwnd=6
+[Send] Data packet seq=68, length=8172, window[63,68], cwnd=6
+[Receive] ACK packet ack=64
+[Window Slide] base: 63 -> 64
+[Send] Data packet seq=69, length=8172, window[64,69], cwnd=6
+[Receive] ACK packet ack=65
+[Window Slide] base: 64 -> 65
+[Send] Data packet seq=70, length=8172, window[65,70], cwnd=6
+[Receive] ACK packet ack=66
+[Window Slide] base: 65 -> 66
+[Send] Data packet seq=71, length=8172, window[66,71], cwnd=6
+[Receive] ACK packet ack=67
+[Window Slide] base: 66 -> 67
+[Send] Data packet seq=72, length=8172, window[67,72], cwnd=6
+[Receive] ACK packet ack=68
+[Window Slide] base: 67 -> 68
+[Send] Data packet seq=73, length=8172, window[68,73], cwnd=6
+[Receive] ACK packet ack=69[RENO] Congestion Avoidance: cwnd increased to 7
+
+[Window Slide] base: 68 -> 69
+[Send] Data packet seq=74, length=8172, window[69,75], cwnd=7
+[Send] Data packet seq=75, length=8172, window[69,75], cwnd=7
+[Receive] ACK packet ack=70
+[Window Slide] base: 69 -> 70
+[Send] Data packet seq=76, length=8172, window[70,76], cwnd=7
+[Receive] ACK packet ack=71
+[Window Slide] base: 70 -> 71
+[Send] Data packet seq=77, length=8172, window[71,77], cwnd=7
+[Receive] ACK packet ack=72
+[Window Slide] base: 71 -> 72
+[Send] Data packet seq=78, length=8172, window[72,78], cwnd=7
+[Receive] ACK packet ack=72[RENO] Duplicate ACK received (count=1, ack=72)
+, SACK blocks=[73]
+
+[Receive] ACK packet ack=72[RENO] Duplicate ACK received (count=2, ack=72)
+, SACK blocks=[73,74]
+
+[Receive] ACK packet ack=72[RENO] Duplicate ACK received (count=3, ack=72)
+[RENO] Fast Retransmit triggered (3 duplicate ACKs)
+[RENO] Entering FAST_RECOVERY (cwnd=3, ssthresh=3)
+, SACK blocks=[73,74,75]
+
+[RENO] Fast Retransmit: retransmitting seq=72
+[Receive] ACK packet ack=72[RENO] Duplicate ACK received (count=4, ack=72)
+[RENO] Fast Recovery: cwnd inflated to 4
+, SACK blocks=[73,74,75,76]
+
+[Receive] ACK packet ack=72[RENO] Duplicate ACK received (count=5, ack=72)
+[RENO] Fast Recovery: cwnd inflated to 5
+, SACK blocks=[73,74,75,76]
+
+[Receive] ACK packet ack=72[RENO] Duplicate ACK received (count=6, ack=72)
+[RENO] Fast Recovery: cwnd inflated to 6
+, SACK blocks=[73,74,75,76]
+
+[Receive] ACK packet ack=79[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=3, ssthresh=3)
+
+[Window Slide] base: 72 -> 79
+[Send] Data packet seq=79, length=8172, window[79,81], cwnd=3
+[Send] Data packet seq=80, length=8172, window[79,81], cwnd=3
+[Send] Data packet seq=81, length=8172, window[79,81], cwnd=3
+[Receive] ACK packet ack=80[RENO] Congestion Avoidance: cwnd increased to 4
+
+[Window Slide] base: 79 -> 80
+[Send] Data packet seq=82, length=8172, window[80,83], cwnd=4
+[Send] Data packet seq=83, length=8172, window[80,83], cwnd=4
+[Receive] ACK packet ack=80[RENO] Duplicate ACK received (count=1, ack=80)
+, SACK blocks=[81]
+
+[Receive] ACK packet ack=80[RENO] Duplicate ACK received (count=2, ack=80)
+, SACK blocks=[81,82]
+
+[Receive] ACK packet ack=80[RENO] Duplicate ACK received (count=3, ack=80)
+[RENO] Fast Retransmit triggered (3 duplicate ACKs)
+[RENO] Entering FAST_RECOVERY (cwnd=2, ssthresh=2)
+, SACK blocks=[81,82,83]
+
+[RENO] Fast Retransmit: retransmitting seq=80
+[Receive] ACK packet ack=84[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 80 -> 84
+[Send] Data packet seq=84, length=8172, window[84,85], cwnd=2
+[Send] Data packet seq=85, length=8172, window[84,85], cwnd=2
+[Receive] ACK packet ack=85
+[Window Slide] base: 84 -> 85
+[Send] Data packet seq=86, length=8172, window[85,86], cwnd=2
+[Receive] ACK packet ack=86[RENO] Congestion Avoidance: cwnd increased to 3
+
+[Window Slide] base: 85 -> 86
+[Send] Data packet seq=87, length=8172, window[86,88], cwnd=3
+[Send] Data packet seq=88, length=8172, window[86,88], cwnd=3
+[Receive] ACK packet ack=86[RENO] Duplicate ACK received (count=1, ack=86)
+, SACK blocks=[87]
+
+[Receive] ACK packet ack=86[RENO] Duplicate ACK received (count=2, ack=86)
+, SACK blocks=[87,88]
+
+[RENO] Timeout detected
+[RENO] Timeout recovery: entering SLOW_START (cwnd=1, ssthresh=2)
+[Timeout Retransmit] seq=86, elapsed 590ms
+[Receive] ACK packet ack=89[RENO] Phase transition: SLOW_START -> CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 86 -> 89
+[Send] Data packet seq=89, length=8172, window[89,90], cwnd=2
+[Send] Data packet seq=90, length=8172, window[89,90], cwnd=2
+[Receive] ACK packet ack=90
+[Window Slide] base: 89 -> 90
+[Send] Data packet seq=91, length=8172, window[90,91], cwnd=2
+[Receive] ACK packet ack=91[RENO] Congestion Avoidance: cwnd increased to 3
+
+[Window Slide] base: 90 -> 91
+[Send] Data packet seq=92, length=8172, window[91,93], cwnd=3
+[Send] Data packet seq=93, length=8172, window[91,93], cwnd=3
+[Receive] ACK packet ack=92
+[Window Slide] base: 91 -> 92
+[Send] Data packet seq=94, length=8172, window[92,94], cwnd=3
+[Receive] ACK packet ack=93
+[Window Slide] base: 92 -> 93
+[Send] Data packet seq=95, length=8172, window[93,95], cwnd=3
+[Receive] ACK packet ack=93[RENO] Duplicate ACK received (count=1, ack=93)
+, SACK blocks=[94]
+
+[Receive] ACK packet ack=93[RENO] Duplicate ACK received (count=2, ack=93)
+, SACK blocks=[94,95]
+
+[RENO] Timeout detected
+[RENO] Timeout recovery: entering SLOW_START (cwnd=1, ssthresh=2)
+[Timeout Retransmit] seq=93, elapsed 607ms
+[Receive] ACK packet ack=96[RENO] Phase transition: SLOW_START -> CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 93 -> 96
+[Send] Data packet seq=96, length=8172, window[96,97], cwnd=2
+[Send] Data packet seq=97, length=8172, window[96,97], cwnd=2
+[Receive] ACK packet ack=97[RENO] Congestion Avoidance: cwnd increased to 3
+
+[Window Slide] base: 96 -> 97
+[Send] Data packet seq=98, length=8172, window[97,99], cwnd=3
+[Send] Data packet seq=99, length=8172, window[97,99], cwnd=3
+[Receive] ACK packet ack=98
+[Window Slide] base: 97 -> 98
+[Send] Data packet seq=100, length=8172, window[98,100], cwnd=3
+[Receive] ACK packet ack=99
+[Window Slide] base: 98 -> 99
+[Send] Data packet seq=101, length=8172, window[99,101], cwnd=3
+[Receive] ACK packet ack=99[RENO] Duplicate ACK received (count=1, ack=99)
+, SACK blocks=[100]
+
+[RENO] Timeout detected
+[RENO] Timeout recovery: entering SLOW_START (cwnd=1, ssthresh=2)
+[Timeout Retransmit] seq=99, elapsed 594ms
+[Timeout Retransmit] seq=101, elapsed 563ms
+[Receive] ACK packet ack=101[RENO] Phase transition: SLOW_START -> CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 99 -> 101
+[Send] Data packet seq=102, length=8172, window[101,102], cwnd=2
+[Receive] ACK packet ack=102[RENO] Congestion Avoidance: cwnd increased to 3
+
+[Window Slide] base: 101 -> 102
+[Send] Data packet seq=103, length=8172, window[102,104], cwnd=3
+[Send] Data packet seq=104, length=8172, window[102,104], cwnd=3
+[Receive] ACK packet ack=103
+[Window Slide] base: 102 -> 103
+[Send] Data packet seq=105, length=8172, window[103,105], cwnd=3
+[Receive] ACK packet ack=104
+[Window Slide] base: 103 -> 104
+[Send] Data packet seq=106, length=8172, window[104,106], cwnd=3
+[Receive] ACK packet ack=105[RENO] Congestion Avoidance: cwnd increased to 4
+
+[Window Slide] base: 104 -> 105
+[Send] Data packet seq=107, length=8172, window[105,108], cwnd=4
+[Send] Data packet seq=108, length=8172, window[105,108], cwnd=4
+[Receive] ACK packet ack=106
+[Window Slide] base: 105 -> 106
+[Send] Data packet seq=109, length=8172, window[106,109], cwnd=4
+[Receive] ACK packet ack=106[RENO] Duplicate ACK received (count=1, ack=106)
+, SACK blocks=[107]
+
+[Receive] ACK packet ack=106[RENO] Duplicate ACK received (count=2, ack=106)
+, SACK blocks=[107,108]
+
+[Receive] ACK packet ack=106[RENO] Duplicate ACK received (count=3, ack=106)
+[RENO] Fast Retransmit triggered (3 duplicate ACKs)
+[RENO] Entering FAST_RECOVERY (cwnd=2, ssthresh=2)
+, SACK blocks=[107,108,109]
+
+[RENO] Fast Retransmit: retransmitting seq=106
+[Receive] ACK packet ack=110[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 106 -> 110
+[Send] Data packet seq=110, length=8172, window[110,111], cwnd=2
+[Send] Data packet seq=111, length=8172, window[110,111], cwnd=2
+[Receive] ACK packet ack=111[RENO] Congestion Avoidance: cwnd increased to 3
+
+[Window Slide] base: 110 -> 111
+[Send] Data packet seq=112, length=8172, window[111,113], cwnd=3
+[Send] Data packet seq=113, length=8172, window[111,113], cwnd=3
+[Receive] ACK packet ack=112
+[Window Slide] base: 111 -> 112
+[Send] Data packet seq=114, length=8172, window[112,114], cwnd=3
+[Receive] ACK packet ack=113
+[Window Slide] base: 112 -> 113
+[Send] Data packet seq=115, length=8172, window[113,115], cwnd=3
+[Receive] ACK packet ack=114[RENO] Congestion Avoidance: cwnd increased to 4
+
+[Window Slide] base: 113 -> 114
+[Send] Data packet seq=116, length=8172, window[114,117], cwnd=4
+[Send] Data packet seq=117, length=8172, window[114,117], cwnd=4
+[Receive] ACK packet ack=115
+[Window Slide] base: 114 -> 115
+[Send] Data packet seq=118, length=8172, window[115,118], cwnd=4
+[Receive] ACK packet ack=116
+[Window Slide] base: 115 -> 116
+[Send] Data packet seq=119, length=8172, window[116,119], cwnd=4
+[Receive] ACK packet ack=117
+[Window Slide] base: 116 -> 117
+[Send] Data packet seq=120, length=8172, window[117,120], cwnd=4
+[Receive] ACK packet ack=118[RENO] Congestion Avoidance: cwnd increased to 5
+
+[Window Slide] base: 117 -> 118
+[Send] Data packet seq=121, length=8172, window[118,122], cwnd=5
+[Send] Data packet seq=122, length=8172, window[118,122], cwnd=5
+[Receive] ACK packet ack=119
+[Window Slide] base: 118 -> 119
+[Send] Data packet seq=123, length=8172, window[119,123], cwnd=5
+[Receive] ACK packet ack=120
+[Window Slide] base: 119 -> 120
+[Send] Data packet seq=124, length=8172, window[120,124], cwnd=5
+[Receive] ACK packet ack=121
+[Window Slide] base: 120 -> 121
+[Send] Data packet seq=125, length=8172, window[121,125], cwnd=5
+[Receive] ACK packet ack=122
+[Window Slide] base: 121 -> 122
+[Send] Data packet seq=126, length=8172, window[122,126], cwnd=5
+[Receive] ACK packet ack=123[RENO] Congestion Avoidance: cwnd increased to 6
+
+[Window Slide] base: 122 -> 123
+[Send] Data packet seq=127, length=8172, window[123,128], cwnd=6
+[Send] Data packet seq=128, length=8172, window[123,128], cwnd=6
+[Receive] ACK packet ack=124
+[Window Slide] base: 123 -> 124
+[Send] Data packet seq=129, length=8172, window[124,129], cwnd=6
+[Receive] ACK packet ack=125
+[Window Slide] base: 124 -> 125
+[Send] Data packet seq=130, length=8172, window[125,130], cwnd=6
+[Receive] ACK packet ack=126
+[Window Slide] base: 125 -> 126
+[Send] Data packet seq=131, length=8172, window[126,131], cwnd=6
+[Receive] ACK packet ack=127
+[Window Slide] base: 126 -> 127
+[Send] Data packet seq=132, length=8172, window[127,132], cwnd=6
+[Receive] ACK packet ack=128
+[Window Slide] base: 127 -> 128
+[Send] Data packet seq=133, length=8172, window[128,133], cwnd=6
+[Receive] ACK packet ack=129[RENO] Congestion Avoidance: cwnd increased to 7
+
+[Window Slide] base: 128 -> 129
+[Send] Data packet seq=134, length=8172, window[129,135], cwnd=7
+[Send] Data packet seq=135, length=8172, window[129,135], cwnd=7
+[Receive] ACK packet ack=130
+[Window Slide] base: 129 -> 130
+[Send] Data packet seq=136, length=8172, window[130,136], cwnd=7
+[Receive] ACK packet ack=131
+[Window Slide] base: 130 -> 131
+[Send] Data packet seq=137, length=8172, window[131,137], cwnd=7
+[Receive] ACK packet ack=132
+[Window Slide] base: 131 -> 132
+[Send] Data packet seq=138, length=8172, window[132,138], cwnd=7
+[Receive] ACK packet ack=133
+[Window Slide] base: 132 -> 133
+[Send] Data packet seq=139, length=8172, window[133,139], cwnd=7
+[Receive] ACK packet ack=134
+[Window Slide] base: 133 -> 134
+[Send] Data packet seq=140, length=8172, window[134,140], cwnd=7
+[Receive] ACK packet ack=135
+[Window Slide] base: 134 -> 135
+[Send] Data packet seq=141, length=8172, window[135,141], cwnd=7
+[Receive] ACK packet ack=136[RENO] Congestion Avoidance: cwnd increased to 8
+
+[Window Slide] base: 135 -> 136
+[Send] Data packet seq=142, length=8172, window[136,143], cwnd=8
+[Send] Data packet seq=143, length=8172, window[136,143], cwnd=8
+[Receive] ACK packet ack=137
+[Window Slide] base: 136 -> 137
+[Send] Data packet seq=144, length=8172, window[137,144], cwnd=8
+[Receive] ACK packet ack=138
+[Window Slide] base: 137 -> 138
+[Send] Data packet seq=145, length=8172, window[138,145], cwnd=8
+[Receive] ACK packet ack=139
+[Window Slide] base: 138 -> 139
+[Send] Data packet seq=146, length=8172, window[139,146], cwnd=8
+[Receive] ACK packet ack=140
+[Window Slide] base: 139 -> 140
+[Send] Data packet seq=147, length=8172, window[140,147], cwnd=8
+[Receive] ACK packet ack=141
+[Window Slide] base: 140 -> 141
+[Send] Data packet seq=148, length=8172, window[141,148], cwnd=8
+[Receive] ACK packet ack=142
+[Window Slide] base: 141 -> 142
+[Send] Data packet seq=149, length=8172, window[142,149], cwnd=8
+[Receive] ACK packet ack=143
+[Window Slide] base: 142 -> 143
+[Send] Data packet seq=150, length=8172, window[143,150], cwnd=8
+[Receive] ACK packet ack=144[RENO] Congestion Avoidance: cwnd increased to 9
+
+[Window Slide] base: 143 -> 144
+[Send] Data packet seq=151, length=8172, window[144,152], cwnd=9
+[Send] Data packet seq=152, length=8172, window[144,152], cwnd=9
+[Receive] ACK packet ack=144[RENO] Duplicate ACK received (count=1, ack=144)
+, SACK blocks=[145]
+
+[Receive] ACK packet ack=144[RENO] Duplicate ACK received (count=2, ack=144)
+, SACK blocks=[145,146]
+
+[Receive] ACK packet ack=144[RENO] Duplicate ACK received (count=3, ack=144)
+[RENO] Fast Retransmit triggered (3 duplicate ACKs)
+[RENO] Entering FAST_RECOVERY (cwnd=4, ssthresh=4)
+, SACK blocks=[145,146,147]
+
+[RENO] Fast Retransmit: retransmitting seq=144
+[Receive] ACK packet ack=144[RENO] Duplicate ACK received (count=4, ack=144)
+[RENO] Fast Recovery: cwnd inflated to 5
+, SACK blocks=[145,146,147,148]
+
+[Receive] ACK packet ack=144[RENO] Duplicate ACK received (count=5, ack=144)
+[RENO] Fast Recovery: cwnd inflated to 6
+, SACK blocks=[145,146,147,148]
+
+[Receive] ACK packet ack=144[RENO] Duplicate ACK received (count=6, ack=144)
+[RENO] Fast Recovery: cwnd inflated to 7
+, SACK blocks=[145,146,147,148]
+
+[Receive] ACK packet ack=144[RENO] Duplicate ACK received (count=7, ack=144)
+[RENO] Fast Recovery: cwnd inflated to 8
+, SACK blocks=[145,146,147,148]
+
+[Receive] ACK packet ack=144[RENO] Duplicate ACK received (count=8, ack=144)
+[RENO] Fast Recovery: cwnd inflated to 9
+, SACK blocks=[145,146,147,148]
+
+[Receive] ACK packet ack=153[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=4, ssthresh=4)
+
+[Window Slide] base: 144 -> 153
+[Send] Data packet seq=153, length=8172, window[153,156], cwnd=4
+[Send] Data packet seq=154, length=8172, window[153,156], cwnd=4
+[Send] Data packet seq=155, length=8172, window[153,156], cwnd=4
+[Send] Data packet seq=156, length=8172, window[153,156], cwnd=4
+[Receive] ACK packet ack=154
+[Window Slide] base: 153 -> 154
+[Send] Data packet seq=157, length=8172, window[154,157], cwnd=4
+[Receive] ACK packet ack=155
+[Window Slide] base: 154 -> 155
+[Send] Data packet seq=158, length=8172, window[155,158], cwnd=4
+[Receive] ACK packet ack=155[RENO] Duplicate ACK received (count=1, ack=155)
+, SACK blocks=[156]
+
+[Receive] ACK packet ack=155[RENO] Duplicate ACK received (count=2, ack=155)
+, SACK blocks=[156,157]
+
+[Receive] ACK packet ack=155[RENO] Duplicate ACK received (count=3, ack=155)
+[RENO] Fast Retransmit triggered (3 duplicate ACKs)
+[RENO] Entering FAST_RECOVERY (cwnd=2, ssthresh=2)
+, SACK blocks=[156,157,158]
+
+[RENO] Fast Retransmit: retransmitting seq=155
+[Receive] ACK packet ack=159[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=2, ssthresh=2)
+
+[Window Slide] base: 155 -> 159
+[Send] Data packet seq=159, length=8172, window[159,160], cwnd=2
+[Send] Data packet seq=160, length=8172, window[159,160], cwnd=2
+[Receive] ACK packet ack=160[RENO] Congestion Avoidance: cwnd increased to 3
+
+[Window Slide] base: 159 -> 160
+[Send] Data packet seq=161, length=8172, window[160,162], cwnd=3
+[Send] Data packet seq=162, length=8172, window[160,162], cwnd=3
+[Receive] ACK packet ack=161
+[Window Slide] base: 160 -> 161
+[Send] Data packet seq=163, length=8172, window[161,163], cwnd=3
+[Receive] ACK packet ack=162
+[Window Slide] base: 161 -> 162
+[Send] Data packet seq=164, length=8172, window[162,164], cwnd=3
+[Receive] ACK packet ack=163[RENO] Congestion Avoidance: cwnd increased to 4
+
+[Window Slide] base: 162 -> 163
+[Send] Data packet seq=165, length=8172, window[163,166], cwnd=4
+[Send] Data packet seq=166, length=8172, window[163,166], cwnd=4
+[Receive] ACK packet ack=164
+[Window Slide] base: 163 -> 164
+[Send] Data packet seq=167, length=8172, window[164,167], cwnd=4
+[Receive] ACK packet ack=165
+[Window Slide] base: 164 -> 165
+[Send] Data packet seq=168, length=8172, window[165,168], cwnd=4
+[Receive] ACK packet ack=166
+[Window Slide] base: 165 -> 166
+[Send] Data packet seq=169, length=8172, window[166,169], cwnd=4
+[Receive] ACK packet ack=167[RENO] Congestion Avoidance: cwnd increased to 5
+
+[Window Slide] base: 166 -> 167
+[Send] Data packet seq=170, length=8172, window[167,171], cwnd=5
+[Send] Data packet seq=171, length=8172, window[167,171], cwnd=5
+[Receive] ACK packet ack=168
+[Window Slide] base: 167 -> 168
+[Send] Data packet seq=172, length=8172, window[168,172], cwnd=5
+[Receive] ACK packet ack=169
+[Window Slide] base: 168 -> 169
+[Send] Data packet seq=173, length=8172, window[169,173], cwnd=5
+[Receive] ACK packet ack=170
+[Window Slide] base: 169 -> 170
+[Send] Data packet seq=174, length=8172, window[170,174], cwnd=5
+[Receive] ACK packet ack=171
+[Window Slide] base: 170 -> 171
+[Send] Data packet seq=175, length=8172, window[171,175], cwnd=5
+[Receive] ACK packet ack=172[RENO] Congestion Avoidance: cwnd increased to 6
+
+[Window Slide] base: 171 -> 172
+[Send] Data packet seq=176, length=8172, window[172,177], cwnd=6
+[Send] Data packet seq=177, length=8172, window[172,177], cwnd=6
+[Receive] ACK packet ack=173
+[Window Slide] base: 172 -> 173
+[Send] Data packet seq=178, length=8172, window[173,178], cwnd=6
+[Receive] ACK packet ack=174
+[Window Slide] base: 173 -> 174
+[Send] Data packet seq=179, length=8172, window[174,179], cwnd=6
+[Receive] ACK packet ack=175
+[Window Slide] base: 174 -> 175
+[Send] Data packet seq=180, length=8172, window[175,180], cwnd=6
+[Receive] ACK packet ack=176
+[Window Slide] base: 175 -> 176
+[Send] Data packet seq=181, length=8172, window[176,181], cwnd=6
+[Receive] ACK packet ack=177
+[Window Slide] base: 176 -> 177
+[Send] Data packet seq=182, length=8172, window[177,182], cwnd=6
+[Receive] ACK packet ack=178[RENO] Congestion Avoidance: cwnd increased to 7
+
+[Window Slide] base: 177 -> 178
+[Send] Data packet seq=183, length=8172, window[178,184], cwnd=7
+[Send] Data packet seq=184, length=8172, window[178,184], cwnd=7
+[Receive] ACK packet ack=179
+[Window Slide] base: 178 -> 179
+[Send] Data packet seq=185, length=8172, window[179,185], cwnd=7
+[Receive] ACK packet ack=180
+[Window Slide] base: 179 -> 180
+[Send] Data packet seq=186, length=8172, window[180,186], cwnd=7
+[Receive] ACK packet ack=181
+[Window Slide] base: 180 -> 181
+[Send] Data packet seq=187, length=8172, window[181,187], cwnd=7
+[Receive] ACK packet ack=182
+[Window Slide] base: 181 -> 182
+[Send] Data packet seq=188, length=8172, window[182,188], cwnd=7
+[Receive] ACK packet ack=183
+[Window Slide] base: 182 -> 183
+[Send] Data packet seq=189, length=8172, window[183,189], cwnd=7
+[Receive] ACK packet ack=184
+[Window Slide] base: 183 -> 184
+[Send] Data packet seq=190, length=8172, window[184,190], cwnd=7
+[Receive] ACK packet ack=185[RENO] Congestion Avoidance: cwnd increased to 8
+
+[Window Slide] base: 184 -> 185
+[Send] Data packet seq=191, length=8172, window[185,192], cwnd=8
+[Send] Data packet seq=192, length=8172, window[185,192], cwnd=8
+[Receive] ACK packet ack=186
+[Window Slide] base: 185 -> 186
+[Send] Data packet seq=193, length=8172, window[186,193], cwnd=8
+[Receive] ACK packet ack=187
+[Window Slide] base: 186 -> 187
+[Send] Data packet seq=194, length=8172, window[187,194], cwnd=8
+[Receive] ACK packet ack=188
+[Window Slide] base: 187 -> 188
+[Send] Data packet seq=195, length=8172, window[188,195], cwnd=8
+[Receive] ACK packet ack=189
+[Window Slide] base: 188 -> 189
+[Send] Data packet seq=196, length=8172, window[189,196], cwnd=8
+[Receive] ACK packet ack=190
+[Window Slide] base: 189 -> 190
+[Send] Data packet seq=197, length=8172, window[190,197], cwnd=8
+[Receive] ACK packet ack=191
+[Window Slide] base: 190 -> 191
+[Send] Data packet seq=198, length=8172, window[191,198], cwnd=8
+[Receive] ACK packet ack=192
+[Window Slide] base: 191 -> 192
+[Send] Data packet seq=199, length=8172, window[192,199], cwnd=8
+[Receive] ACK packet ack=193[RENO] Congestion Avoidance: cwnd increased to 9
+
+[Window Slide] base: 192 -> 193
+[Send] Data packet seq=200, length=8172, window[193,201], cwnd=9
+[Send] Data packet seq=201, length=8172, window[193,201], cwnd=9
+[Receive] ACK packet ack=194
+[Window Slide] base: 193 -> 194
+[Send] Data packet seq=202, length=8172, window[194,202], cwnd=9
+[Receive] ACK packet ack=195
+[Window Slide] base: 194 -> 195
+[Send] Data packet seq=203, length=8172, window[195,203], cwnd=9
+[Receive] ACK packet ack=196
+[Window Slide] base: 195 -> 196
+[Send] Data packet seq=204, length=8172, window[196,204], cwnd=9
+[Receive] ACK packet ack=197
+[Window Slide] base: 196 -> 197
+[Send] Data packet seq=205, length=8172, window[197,205], cwnd=9
+[Receive] ACK packet ack=198
+[Window Slide] base: 197 -> 198
+[Send] Data packet seq=206, length=8172, window[198,206], cwnd=9
+[Receive] ACK packet ack=199
+[Window Slide] base: 198 -> 199
+[Send] Data packet seq=207, length=8172, window[199,207], cwnd=9
+[Receive] ACK packet ack=200
+[Window Slide] base: 199 -> 200
+[Send] Data packet seq=208, length=8172, window[200,208], cwnd=9
+[Receive] ACK packet ack=201
+[Window Slide] base: 200 -> 201
+[Send] Data packet seq=209, length=8172, window[201,209], cwnd=9
+[Receive] ACK packet ack=202[RENO] Congestion Avoidance: cwnd increased to 10
+
+[Window Slide] base: 201 -> 202
+[Send] Data packet seq=210, length=8172, window[202,211], cwnd=10
+[Send] Data packet seq=211, length=8172, window[202,211], cwnd=10
+[Receive] ACK packet ack=203
+[Window Slide] base: 202 -> 203
+[Send] Data packet seq=212, length=8172, window[203,212], cwnd=10
+[Receive] ACK packet ack=204
+[Window Slide] base: 203 -> 204
+[Send] Data packet seq=213, length=8172, window[204,213], cwnd=10
+[Receive] ACK packet ack=205
+[Window Slide] base: 204 -> 205
+[Send] Data packet seq=214, length=8172, window[205,214], cwnd=10
+[Receive] ACK packet ack=206
+[Window Slide] base: 205 -> 206
+[Send] Data packet seq=215, length=8172, window[206,215], cwnd=10
+[Receive] ACK packet ack=207
+[Window Slide] base: 206 -> 207
+[Send] Data packet seq=216, length=8172, window[207,216], cwnd=10
+[Receive] ACK packet ack=208
+[Window Slide] base: 207 -> 208
+[Send] Data packet seq=217, length=8172, window[208,217], cwnd=10
+[Receive] ACK packet ack=209
+[Window Slide] base: 208 -> 209
+[Send] Data packet seq=218, length=8172, window[209,218], cwnd=10
+[Receive] ACK packet ack=210
+[Window Slide] base: 209 -> 210
+[Send] Data packet seq=219, length=8172, window[210,219], cwnd=10
+[Receive] ACK packet ack=211
+[Window Slide] base: 210 -> 211
+[Send] Data packet seq=220, length=8172, window[211,220], cwnd=10
+[Receive] ACK packet ack=212[RENO] Congestion Avoidance: cwnd increased to 11
+
+[Window Slide] base: 211 -> 212
+[Send] Data packet seq=221, length=8172, window[212,222], cwnd=11
+[Send] Data packet seq=222, length=8172, window[212,222], cwnd=11
+[Receive] ACK packet ack=213
+[Window Slide] base: 212 -> 213
+[Send] Data packet seq=223, length=8172, window[213,223], cwnd=11
+[Receive] ACK packet ack=214
+[Window Slide] base: 213 -> 214
+[Send] Data packet seq=224, length=8172, window[214,224], cwnd=11
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=1, ack=214)
+, SACK blocks=[215]
+
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=2, ack=214)
+, SACK blocks=[215,216]
+
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=3, ack=214)
+[RENO] Fast Retransmit triggered (3 duplicate ACKs)
+[RENO] Entering FAST_RECOVERY (cwnd=5, ssthresh=5)
+, SACK blocks=[215,216,217]
+
+[RENO] Fast Retransmit: retransmitting seq=214
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=4, ack=214)
+[RENO] Fast Recovery: cwnd inflated to 6
+, SACK blocks=[215,216,217,218]
+
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=5, ack=214)
+[RENO] Fast Recovery: cwnd inflated to 7
+, SACK blocks=[215,216,217,218]
+
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=6, ack=214)
+[RENO] Fast Recovery: cwnd inflated to 8
+, SACK blocks=[215,216,217,218]
+
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=7, ack=214)
+[RENO] Fast Recovery: cwnd inflated to 9
+, SACK blocks=[215,216,217,218]
+
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=8, ack=214)
+[RENO] Fast Recovery: cwnd inflated to 10
+, SACK blocks=[215,216,217,218]
+
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=9, ack=214)
+[RENO] Fast Recovery: cwnd inflated to 11
+, SACK blocks=[215,216,217,218]
+
+[Receive] ACK packet ack=214[RENO] Duplicate ACK received (count=10, ack=214)
+[RENO] Fast Recovery: cwnd inflated to 12
+, SACK blocks=[215,216,217,218]
+
+[Send] Data packet seq=225, length=8172, window[214,225], cwnd=12
+[Receive] ACK packet ack=225[RENO] Fast Recovery completed, transition to CONGESTION_AVOIDANCE (cwnd=5, ssthresh=5)
+
+[Window Slide] base: 214 -> 225
+[Send] Data packet seq=226, length=8172, window[225,229], cwnd=5
+[Send] Data packet seq=227, length=8172, window[225,229], cwnd=5
+[Send] Data packet seq=228, length=2309, window[225,229], cwnd=5
+[Receive] ACK packet ack=226
+[Window Slide] base: 225 -> 226
+[Receive] ACK packet ack=227
+[Window Slide] base: 226 -> 227
+[Receive] ACK packet ack=228[RENO] Congestion Avoidance: cwnd increased to 6
+
+[Window Slide] base: 227 -> 228
+[Receive] ACK packet ack=229
+[Window Slide] base: 228 -> 229
+[Pipeline Send] Data transmission completed, sent 228 packets
+[RENO] Final state: cwnd=6, ssthresh=5, phase=CONGESTION_AVOIDANCE
+[Transfer] File '1.jpg' transferred successfully!
+
+[Summary] File transfer succeeded
+
+[Four-way Handshake] Starting connection closure...
+[State Transition] ESTABLISHED -> FIN_WAIT_1
+[Sent] FIN packet (seq=229)
+[Received] ACK packet (ack=230)
+[State Transition] FIN_WAIT_1 -> FIN_WAIT_2
+[Received] FIN packet (seq=1)
+[Sent] ACK packet (ack=2)
+[State Transition] FIN_WAIT_2 -> TIME_WAIT
+[Waiting] TIME_WAIT state, waiting for 4000ms...
+[State Transition] TIME_WAIT -> CLOSED
+[Success] Connection closed!
+
+
+========== Client Transmission Statistics ==========
+Total Packets Sent (incl. retrans): 242
+Total Retransmissions: 14
+====================================================
+
+Client program ended
