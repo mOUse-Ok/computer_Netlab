@@ -6,14 +6,10 @@
 #include <winsock2.h>  // Windows Socket API头文件
 #include <ws2tcpip.h>  // 包含sockaddr_in6等结构体定义
 #include <windows.h>   // Windows API用于目录操作
-#include "client.h"    // 引入客户端头文件（包含config.h和protocol.h）
-
-
+#include "client.h"    
 #pragma comment(lib, "ws2_32.lib")  // 链接WS2_32.lib库
-
 // ===== 测试文件目录路径 =====
 const char* TESTFILE_DIR = "testfile";
-
 // ===== 获取testfile目录下的所有文件名 =====
 std::vector<std::string> getTestFiles() {
     std::vector<std::string> files;
@@ -32,7 +28,6 @@ std::vector<std::string> getTestFiles() {
     }
     return files;
 }
-
 // ===== 读取文件内容 =====
 bool readFileContent(const std::string& filename, std::vector<char>& content) {
     std::string filepath = std::string(TESTFILE_DIR) + "\\" + filename;
@@ -56,76 +51,18 @@ bool readFileContent(const std::string& filename, std::vector<char>& content) {
     return true;
 }
 
-// ===== 发送文件名信息 - 已弃用 =====
-// 在传输文件数据之前，先发送文件名让服务端知道如何保存
-/*
-bool sendFilename(SOCKET clientSocket, sockaddr_in& serverAddr, 
-                  const std::string& filename, uint32_t& clientSeq) {
-    // 构造文件名包：格式为 "FILENAME:" + 文件名
-    std::string filenameData = "FILENAME:" + filename;
-    
-    Packet fnPacket;
-    fnPacket.header.seq = clientSeq;
-    fnPacket.header.ack = 0;
-    fnPacket.header.flag = FLAG_ACK;  // 使用ACK标志表示数据包
-    fnPacket.header.win = FIXED_WINDOW_SIZE;
-    fnPacket.setData(filenameData.c_str(), filenameData.length());
-    
-    char sendBuffer[MAX_PACKET_SIZE];
-    fnPacket.serialize(sendBuffer);
-    int bytesSent = sendto(clientSocket, sendBuffer, fnPacket.getTotalLen(), 0,
-                          (sockaddr*)&serverAddr, sizeof(serverAddr));
-    
-    if (bytesSent == SOCKET_ERROR) {
-        std::cerr << "[Error] Failed to send filename: " << WSAGetLastError() << std::endl;
-        return false;
-    }
-    
-    std::cout << "[Send] Filename packet: " << filename << std::endl;
-    
-    // 等待ACK
-    int timeout = TIMEOUT_MS;
-    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-    
-    char recvBuffer[MAX_PACKET_SIZE];
-    sockaddr_in fromAddr;
-    int fromAddrLen = sizeof(fromAddr);
-    
-    int bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                 (sockaddr*)&fromAddr, &fromAddrLen);
-    
-    if (bytesReceived > 0) {
-        Packet ackPacket;
-        if (ackPacket.deserialize(recvBuffer, bytesReceived)) {
-            if ((ackPacket.header.flag & FLAG_ACK) && ackPacket.header.ack == clientSeq + 1) {
-                std::cout << "[Receive] Filename ACK received" << std::endl;
-                clientSeq++;  // 更新序列号
-                return true;
-            }
-        }
-    }
-    
-    std::cerr << "[Warning] Filename ACK not received, continuing anyway..." << std::endl;
-    clientSeq++;  // 即使没收到ACK也更新序列号
-    return true;
-}
-*/
+
+
 
 // ===== 传输单个文件 =====
 bool transferFile(SOCKET clientSocket, sockaddr_in& serverAddr, 
                   const std::string& filename, uint32_t& clientSeq) {
-    std::vector<char> content;
+    std::vector<char> content;// 存储文件内容
     if (!readFileContent(filename, content)) {
         return false;
     }
     
     std::cout << "\n[Transfer] Starting transfer of '" << filename << "'..." << std::endl;
-    
-    // 首先发送文件名 - 已移除，改为服务端手动输入
-    // if (!sendFilename(clientSocket, serverAddr, filename, clientSeq)) {
-    //     std::cerr << "[Error] Failed to send filename" << std::endl;
-    //     return false;
-    // }
     
     // 使用pipelineSend发送文件内容
     bool result = pipelineSend(clientSocket, serverAddr, content.data(), content.size(), clientSeq);
@@ -141,6 +78,9 @@ bool transferFile(SOCKET clientSocket, sockaddr_in& serverAddr,
     return result;
 }
 
+
+
+// ========================================================= 流水线发送 ==================================================//
 // 全局发送窗口：管理流水线发送的滑动窗口状态
 SendWindow g_sendWindow;
 
@@ -150,7 +90,7 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
     // 初始化发送窗口
     g_sendWindow.reset(baseSeq);
     
-    int totalPackets = (dataLen + MAX_DATA_SIZE - 1) / MAX_DATA_SIZE;  // 计算总包数
+    int totalPackets = (dataLen + MAX_DATA_SIZE - 1) / MAX_DATA_SIZE;  // 计算总包数，这里+MDS-1是为了向上取整
     int sentPackets = 0;    // 已完成发送（已确认）的包数
     int dataOffset = 0;     // 数据偏移量
     
@@ -167,32 +107,32 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
     
     while (sentPackets < totalPackets) {
         // ===== 步骤1：发送窗口内所有可发送的包（流水线发送，受 RENO 拥塞窗口限制） =====
-        while (g_sendWindow.canSend() && dataOffset < dataLen) {
-            int idx = g_sendWindow.getIndex(g_sendWindow.next_seq);
+        while (g_sendWindow.canSend() && dataOffset < dataLen) {   // 检查序号是否在窗口内，且还有数据还没发完
+            int idx = g_sendWindow.getIndex(g_sendWindow.next_seq);// 获取窗口内索引
             
             // 计算当前包的数据长度
             int packetDataLen = (dataLen - dataOffset > MAX_DATA_SIZE) ? 
-                                MAX_DATA_SIZE : (dataLen - dataOffset);
+                                MAX_DATA_SIZE : (dataLen - dataOffset);//MSS或剩余数据长度
             
             // 将数据复制到发送窗口缓冲区（用于可能的重传）
-            memcpy(g_sendWindow.data_buf[idx], data + dataOffset, packetDataLen);
+            memcpy(g_sendWindow.data_buf[idx], data + dataOffset, packetDataLen);//参数：目标地址，源地址，复制长度，data是要传输文件的基地址
             g_sendWindow.data_len[idx] = packetDataLen;
             g_sendWindow.is_sent[idx] = 1;
             g_sendWindow.is_ack[idx] = 0;
-            g_sendWindow.send_time[idx] = clock();  // 记录发送时间
+            g_sendWindow.send_time[idx] = clock();  // 记录发送时间，用于计时器
             
             // 构造并发送数据包
             Packet dataPacket;
-            dataPacket.header.seq = g_sendWindow.next_seq;
-            dataPacket.header.ack = 0;
-            dataPacket.header.flag = FLAG_ACK;  // 数据包带ACK标志
-            dataPacket.header.win = FIXED_WINDOW_SIZE;  // 携带窗口大小（流量控制）
-            dataPacket.setData(g_sendWindow.data_buf[idx], packetDataLen);
+            dataPacket.header.seq = g_sendWindow.next_seq;//设置序列号
+            dataPacket.header.ack = 0;//因为是发送数据包，ack字段恒为0
+            dataPacket.header.flag = FLAG_ACK;  // 数据包通常都设置ACK标志，虽然发送数据包用不上
+            dataPacket.header.win = FIXED_WINDOW_SIZE;  // 用不上，暂时设置为固定窗口大小
+            dataPacket.setData(g_sendWindow.data_buf[idx], packetDataLen);//加载数据到数据包的负载部分
             
             char sendBuffer[MAX_PACKET_SIZE];
             dataPacket.serialize(sendBuffer);
             int bytesSent = sendto(clientSocket, sendBuffer, dataPacket.getTotalLen(), 0,
-                                  (sockaddr*)&serverAddr, sizeof(serverAddr));
+                                  (sockaddr*)&serverAddr, sizeof(serverAddr));//参数：套接字，发送数据缓冲区，数据长度，标志，目标地址，地址长度
             
             if (bytesSent == SOCKET_ERROR) {
                 std::cerr << "[错误] 发送数据包失败: " << WSAGetLastError() << std::endl;
@@ -223,7 +163,7 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
         
         if (bytesReceived > 0) {
             Packet ackPacket;
-            if (ackPacket.deserialize(recvBuffer, bytesReceived)) {
+            if (ackPacket.deserialize(recvBuffer, bytesReceived)) {//解析接收到的包
                 // 检查是否为ACK包
                 if (ackPacket.header.flag & FLAG_ACK) {
                     std::cout << "[Receive] ACK packet ack=" << ackPacket.header.ack;
@@ -242,6 +182,7 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                                 if (i > 0) std::cout << ",";
                                 std::cout << sackInfo.sack_blocks[i];
                                 // 标记SACK中的序列号为已确认
+                                // 根据SACK信息标记已接收的包，避免超时重传
                                 if (sackInfo.sack_blocks[i] >= g_sendWindow.base &&
                                     sackInfo.sack_blocks[i] < g_sendWindow.base + FIXED_WINDOW_SIZE) {
                                     int sackIdx = g_sendWindow.getIndex(sackInfo.sack_blocks[i]);
@@ -257,7 +198,7 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                     }
                     std::cout << std::endl;
                     
-                    // 累积确认：标记所有序列号 < ack 的包为已确认
+                    // 标记所有序列号 < ack 的包为已确认
                     for (uint32_t seq = g_sendWindow.base; seq < ackPacket.header.ack; seq++) {
                         if (seq < g_sendWindow.base + FIXED_WINDOW_SIZE) {
                             int idx = g_sendWindow.getIndex(seq);
@@ -280,9 +221,9 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                     if (g_sendWindow.dup_ack_count == DUP_ACK_THRESHOLD && 
                         g_sendWindow.reno_phase == FAST_RECOVERY) {
                         // 重传丢失的包（base位置的包）
-                        uint32_t lostSeq = g_sendWindow.last_ack;
-                        if (lostSeq >= g_sendWindow.base && lostSeq < g_sendWindow.next_seq) {
-                            int lostIdx = g_sendWindow.getIndex(lostSeq);
+                        uint32_t lostSeq = g_sendWindow.last_ack;//丢失的序列号
+                        if (lostSeq >= g_sendWindow.base && lostSeq < g_sendWindow.next_seq) {//确保丢失包在发送窗口内
+                            int lostIdx = g_sendWindow.getIndex(lostSeq);//获取丢失包的窗口索引
                             
                             std::cout << "[RENO] Fast Retransmit: retransmitting seq=" << lostSeq << std::endl;
                             
@@ -320,6 +261,7 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
                 double elapsedMs = (double)(currentTime - g_sendWindow.send_time[idx]) * 1000.0 / CLOCKS_PER_SEC;
                 if (elapsedMs > SACK_TIMEOUT_MS) {
                     // ===== RENO 拥塞控制：超时处理 =====
+                    // 超时处理，进入慢启动
                     if (!hasTimeout) {
                         // 第一个超时包触发 RENO 超时处理
                         g_sendWindow.handleTimeout();
@@ -357,10 +299,15 @@ bool pipelineSend(SOCKET clientSocket, sockaddr_in& serverAddr,
               << ", phase=" << getRenoPhaseName(g_sendWindow.reno_phase) << std::endl;
     return true;
 }
+// ========================================================= 流水线发送 ==================================================//
 
+
+
+
+// ========================================================== 连接管理 ==================================================//
 // 三次握手：建立连接
 bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq, uint32_t& serverSeq) {
-    ConnectionState state = CLOSED;
+    ConnectionState state = CLOSED;//连接状态，定义在client.h中
     int retries = 0;  // 重传次数
     
     // 生成客户端初始序列号
@@ -368,25 +315,25 @@ bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq
     std::cout << "\n[Three-way Handshake] Starting connection establishment..." << std::endl;
     
     // First handshake: Send SYN packet
-    state = SYN_SENT;
+    // 第一次握手：客户端发送SYN包
+    state = SYN_SENT;//把连接状态改为SYN_SENT
     std::cout << "[State Transition] CLOSED -> SYN_SENT" << std::endl;
     
-    Packet synPacket;
-    synPacket.header.seq = clientSeq;
-    synPacket.header.ack = 0;
-    synPacket.header.flag = FLAG_SYN;
-    synPacket.dataLen = 0;
+    Packet synPacket;//构造SYN包
+    synPacket.header.seq = clientSeq;//设置序列号
+    synPacket.header.ack = 0;//初始ACK为0，表示这不是确认包
+    synPacket.header.flag = FLAG_SYN; // 设置SYN标志，作用是告诉接收方这是一个连接请求包
+    synPacket.dataLen = 0;//数据长度为0，因为SYN包不携带数据
     synPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
-    synPacket.header.calculateChecksum(synPacket.data, 0);
+    synPacket.header.calculateChecksum(synPacket.data, 0); // 计算校验和
     
-    while (retries < MAX_RETRIES) {
+    while (retries < MAX_RETRIES) {//MAX_RETRIES定义在config.h中，表示建立、关闭连接时的最大重传次数
         // 发送SYN包
-        char sendBuffer[MAX_PACKET_SIZE];
-        synPacket.serialize(sendBuffer);
+        char sendBuffer[MAX_PACKET_SIZE];//定义发送缓冲区
+        synPacket.serialize(sendBuffer);//序列化SYN包到发送缓冲区
         int bytesSent = sendto(clientSocket, sendBuffer, synPacket.getTotalLen(), 0,
-                              (sockaddr*)&serverAddr, sizeof(serverAddr));
-        
-        if (bytesSent == SOCKET_ERROR) {
+                              (sockaddr*)&serverAddr, sizeof(serverAddr));//发送SYN包，返回发送的字节数
+        if (bytesSent == SOCKET_ERROR) {//发送失败
             std::cerr << "[Error] Failed to send SYN packet: " << WSAGetLastError() << std::endl;
             return false;
         }
@@ -394,19 +341,20 @@ bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq
         std::cout << "[Sent] SYN packet (seq=" << clientSeq << ", retry count=" << retries << ")" << std::endl;
         
         // 设置接收超时
-        int timeout = TIMEOUT_MS;
-        setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+        // 握手阶段的超时重传机制
+        int timeout = TIMEOUT_MS;//设置超时时间，TIMEOUT_MS定义在config.h中，表示超时时间
+        setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));//设置套接字选项，指定接收超时时间，这五个参数分别是：套接字描述符、级别（SOL_SOCKET表示套接字级别）、选项名称（SO_RCVTIMEO表示接收超时选项）、指向超时值的指针、超时值的大小
         
         // 等待接收SYN+ACK包
         char recvBuffer[MAX_PACKET_SIZE];
-        sockaddr_in fromAddr;
-        int fromAddrLen = sizeof(fromAddr);
+        sockaddr_in fromAddr;//定义发送方地址结构体
+        int fromAddrLen = sizeof(fromAddr);//定义地址长度
         
         int bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                     (sockaddr*)&fromAddr, &fromAddrLen);
+                                     (sockaddr*)&fromAddr, &fromAddrLen);//接收数据包，返回接收的字节数
         
         if (bytesReceived == SOCKET_ERROR) {
-            if (WSAGetLastError() == WSAETIMEDOUT) {
+            if (WSAGetLastError() == WSAETIMEDOUT) {//接收超时导致的错误
                 retries++;
                 std::cout << "[Timeout] SYN+ACK not received, retransmitting SYN (attempt " << retries << ")" << std::endl;
                 continue;
@@ -417,27 +365,28 @@ bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq
         }
         
         // 解析收到的包
-        Packet recvPacket;
-        if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
+        Packet recvPacket;//定义接收包对象，调用deserialize方法可以将接收到的字节流反序列化为Packet对象
+        if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {//解析失败
+            // 校验和验证失败
             std::cout << "[Error] Packet checksum failed, discarded" << std::endl;
             continue;
         }
         
         // 第二次握手：检查是否为SYN+ACK包
-        if ((recvPacket.header.flag & FLAG_SYN) && (recvPacket.header.flag & FLAG_ACK)) {
-            if (recvPacket.header.ack == clientSeq + 1) {
-                serverSeq = recvPacket.header.seq;
+        if ((recvPacket.header.flag & FLAG_SYN) && (recvPacket.header.flag & FLAG_ACK)) {//检查标志位是否同时包含SYN和ACK
+            if (recvPacket.header.ack == clientSeq + 1) {//确认号正确
+                serverSeq = recvPacket.header.seq;//记录服务器的初始序列号
                 std::cout << "[Received] SYN+ACK packet (seq=" << serverSeq 
                          << ", ack=" << recvPacket.header.ack << ")" << std::endl;
                 
                 // 第三次握手：发送ACK包
-                Packet ackPacket;
+                Packet ackPacket;//第一次握手发送的包叫synPacket，第二次握手收到的包叫recvPacket，第三次握手发送的包叫ackPacket
                 ackPacket.header.seq = clientSeq + 1;
                 ackPacket.header.ack = serverSeq + 1;
-                ackPacket.header.flag = FLAG_ACK;
+                ackPacket.header.flag = FLAG_ACK; // 设置ACK标志，表示这是一个确认包
                 ackPacket.dataLen = 0;
                 ackPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
-                ackPacket.header.calculateChecksum(ackPacket.data, 0);
+                ackPacket.header.calculateChecksum(ackPacket.data, 0);//计算校验和，并设置到包头中
                 
                 ackPacket.serialize(sendBuffer);
                 bytesSent = sendto(clientSocket, sendBuffer, ackPacket.getTotalLen(), 0,
@@ -463,19 +412,20 @@ bool handshake(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t& clientSeq
     return false;
 }
 
-// 四次挥手：关闭连接
+// 四次挥手：关闭连接。本来也可以使用两次挥手来关闭连接，但为了确保server端也能正确关闭连接，还是使用四次挥手
 bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clientSeq, uint32_t serverSeq) {
     ConnectionState state = ESTABLISHED;
     std::cout << "\n[Four-way Handshake] Starting connection closure..." << std::endl;
     
     // First handshake: Client sends FIN packet
+    // 第一次挥手：客户端发送FIN包
     state = FIN_WAIT_1;
     std::cout << "[State Transition] ESTABLISHED -> FIN_WAIT_1" << std::endl;
     
     Packet finPacket;
     finPacket.header.seq = clientSeq;
     finPacket.header.ack = serverSeq;
-    finPacket.header.flag = FLAG_FIN;
+    finPacket.header.flag = FLAG_FIN; // 设置FIN标志，表示这是一个终止连接的包
     finPacket.dataLen = 0;
     finPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
     finPacket.header.calculateChecksum(finPacket.data, 0);
@@ -492,17 +442,18 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
     
     std::cout << "[Sent] FIN packet (seq=" << clientSeq << ")" << std::endl;
     
-    // 设置接收超时
+    // 挥手阶段的超时机制
+    // // 设置接收超时
     int timeout = TIMEOUT_MS;
-    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));//设置套接字选项，和握手阶段一样
     
     // 第二次挥手：等待服务端的ACK
     char recvBuffer[MAX_PACKET_SIZE];
-    sockaddr_in fromAddr;
+    sockaddr_in fromAddr;//定义发送方地址结构体，用于接收数据包的来源信息
     int fromAddrLen = sizeof(fromAddr);
     
     int bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                 (sockaddr*)&fromAddr, &fromAddrLen);
+                                 (sockaddr*)&fromAddr, &fromAddrLen);//接收数据包，返回接收的字节数
     
     if (bytesReceived == SOCKET_ERROR) {
         std::cerr << "[Timeout] Server ACK not received" << std::endl;
@@ -511,11 +462,13 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
     
     Packet recvPacket;
     if (!recvPacket.deserialize(recvBuffer, bytesReceived)) {
+        // 校验和验证失败
         std::cout << "[Error] Packet checksum failed" << std::endl;
         return false;
     }
     
     if ((recvPacket.header.flag & FLAG_ACK) && recvPacket.header.ack == clientSeq + 1) {
+        // 正确收到ACK包
         std::cout << "[Received] ACK packet (ack=" << recvPacket.header.ack << ")" << std::endl;
         state = FIN_WAIT_2;
         std::cout << "[State Transition] FIN_WAIT_1 -> FIN_WAIT_2" << std::endl;
@@ -524,7 +477,7 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
         return false;
     }
     
-    // Third handshake: Wait for server's FIN packet
+    // 第三次挥手：等待服务端的FIN包
     bytesReceived = recvfrom(clientSocket, recvBuffer, MAX_PACKET_SIZE, 0,
                             (sockaddr*)&fromAddr, &fromAddrLen);
     
@@ -540,12 +493,11 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
     
     if (recvPacket.header.flag & FLAG_FIN) {
         std::cout << "[Received] FIN packet (seq=" << recvPacket.header.seq << ")" << std::endl;
-        
-        // Fourth handshake: Send final ACK
+        // 第四次挥手：客户端发送最后的ACK包
         Packet finalAckPacket;
         finalAckPacket.header.seq = clientSeq + 1;
         finalAckPacket.header.ack = recvPacket.header.seq + 1;
-        finalAckPacket.header.flag = FLAG_ACK;
+        finalAckPacket.header.flag = FLAG_ACK; // 设置ACK标志
         finalAckPacket.dataLen = 0;
         finalAckPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
         finalAckPacket.header.calculateChecksum(finalAckPacket.data, 0);
@@ -560,14 +512,14 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
         }
         
         std::cout << "[Sent] ACK packet (ack=" << finalAckPacket.header.ack << ")" << std::endl;
-        state = TIME_WAIT;
+        state = TIME_WAIT;//进入TIME_WAIT状态
         std::cout << "[State Transition] FIN_WAIT_2 -> TIME_WAIT" << std::endl;
         
-        // Wait for 2*MSL (TIME_WAIT state)
+        // TIME_WAIT等待2MSL，确保服务端收到最后的ACK
         std::cout << "[Waiting] TIME_WAIT state, waiting for " << TIME_WAIT_MS << "ms..." << std::endl;
         Sleep(TIME_WAIT_MS);
         
-        state = CLOSED;
+        state = CLOSED;//关闭连接，其实在收到server的第二次挥手的ACK包后，客户端就可以关闭连接了，但我们四次挥手是确保双方都关闭连接，所以client要发送完最后一个ACK包后，进入TIME_WAIT状态，等待一段时间后再关闭连接
         std::cout << "[State Transition] TIME_WAIT -> CLOSED" << std::endl;
         std::cout << "[Success] Connection closed!\n" << std::endl;
         
@@ -582,6 +534,9 @@ bool closeConnection(SOCKET clientSocket, sockaddr_in& serverAddr, uint32_t clie
     
     return false;
 }
+// ========================================================== 连接管理 ==================================================//
+
+
 
 int main() {
     // 输出重定向：同时输出到终端和文件
@@ -669,7 +624,7 @@ int main() {
     // 获取testfile目录下的文件列表
     std::vector<std::string> files = getTestFiles();
     
-    // 打印文件列表（简化版）
+    // 打印文件列表
     std::cout << "\n========== testfile Directory Files ==========" << std::endl;
     if (files.empty()) {
         std::cout << "  (No files found)" << std::endl;

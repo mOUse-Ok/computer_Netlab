@@ -17,7 +17,7 @@ std::string g_currentFilename;
 
 // 全局缓冲区：存储接收到的文件数据
 static char g_receivedFileData[13 * 1024 * 1024];  // 13MB缓冲区（支持更大文件）
-static int g_receivedFileLen = 0;
+//static int g_receivedFileLen = 0;// 已接收文件数据长度
 
 // 全局变量：用于统计传输时间
 static clock_t g_firstPacketTime = 0;   // 接收到第一个数据包的时间
@@ -29,7 +29,6 @@ RecvWindow g_recvWindow;
 
 // 模拟日志文件流：记录丢包和延迟信息
 std::ofstream g_simulationLog;
-
 // 初始化模拟日志
 void initSimulationLog() {
     g_simulationLog.open("simulation.txt", std::ios::out | std::ios::trunc);
@@ -43,7 +42,6 @@ void initSimulationLog() {
         g_simulationLog << "===================================" << std::endl << std::endl;
     }
 }
-
 // 关闭模拟日志
 void closeSimulationLog() {
     if (g_simulationLog.is_open()) {
@@ -51,7 +49,6 @@ void closeSimulationLog() {
         g_simulationLog.close();
     }
 }
-
 // 模拟丢包检查：根据配置的丢包率决定是否丢弃当前数据包
 bool shouldDropPacket(uint32_t recvSeq) {
     if (!SIMULATE_LOSS_ENABLED || SIMULATE_LOSS_RATE <= 0) {
@@ -72,7 +69,6 @@ bool shouldDropPacket(uint32_t recvSeq) {
     }
     return false;
 }
-
 // 模拟延迟：根据配置的延迟时间进行延迟处理
 void simulateDelay(uint32_t recvSeq) {
     if (!SIMULATE_DELAY_ENABLED || SIMULATE_DELAY_MS <= 0) {
@@ -80,7 +76,7 @@ void simulateDelay(uint32_t recvSeq) {
     }
     
     std::cout << "[Simulation] DELAY packet seq=" << recvSeq 
-              << " for " << SIMULATE_DELAY_MS << "ms" << std::endl;
+              << " for " << SIMULATE_DELAY_MS << "ms" << std::endl << std::endl;
     if (g_simulationLog.is_open()) {
         g_simulationLog << "[DELAY] seq=" << recvSeq 
                        << ", delay=" << SIMULATE_DELAY_MS << "ms" << std::endl;
@@ -88,13 +84,16 @@ void simulateDelay(uint32_t recvSeq) {
     Sleep(SIMULATE_DELAY_MS);
 }
 
-// 发送ACK/SACK响应：支持累积确认和选择确认
+
+
+
+// 发送ACK/SACK响应：支持选择确认
 void sendACK(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
              uint32_t ackNum, uint32_t serverSeq, bool useSACK) {
     Packet ackPacket;
     ackPacket.header.seq = serverSeq;
-    ackPacket.header.ack = ackNum;
-    ackPacket.header.flag = FLAG_ACK;
+    ackPacket.header.ack = ackNum;//确认收到到ackNum-1的数据
+    ackPacket.header.flag = FLAG_ACK;//设置ACK标志
     ackPacket.header.win = FIXED_WINDOW_SIZE;  // 携带固定窗口大小（流量控制）
     
     // 如果使用SACK，生成并携带选择确认信息
@@ -102,11 +101,11 @@ void sendACK(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
         ackPacket.header.flag |= FLAG_SACK;  // 设置SACK标志
         
         // 生成SACK信息
-        SACKInfo sackInfo;
-        sackInfo.count = g_recvWindow.generateSACK(sackInfo.sack_blocks, MAX_SACK_BLOCKS);
+        SACKInfo sackInfo;//选择确认信息结构体
+        sackInfo.count = g_recvWindow.generateSACK(sackInfo.sack_blocks, MAX_SACK_BLOCKS);//生成SACK块，大小
         
         // 将SACK信息序列化到数据部分
-        char sackData[64];
+        char sackData[64];//选择确认信息序列化缓冲区
         int sackLen = sackInfo.serialize(sackData);
         ackPacket.setData(sackData, sackLen);
         
@@ -115,12 +114,12 @@ void sendACK(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
             if (i > 0) std::cout << ",";
             std::cout << sackInfo.sack_blocks[i];
         }
-        std::cout << "], win=" << FIXED_WINDOW_SIZE << std::endl;
+        std::cout << "]," << std::endl;
     } else {
         ackPacket.header.len = 0;
         ackPacket.dataLen = 0;
         ackPacket.header.calculateChecksum(ackPacket.data, 0);
-        std::cout << "[Send] ACK packet ack=" << ackNum << ", win=" << FIXED_WINDOW_SIZE << std::endl;
+        std::cout << "[Send] ACK packet ack=" << ackNum << "," << std::endl;
     }
     
     char sendBuffer[MAX_PACKET_SIZE];
@@ -157,8 +156,8 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
     
     while (idleCount < maxIdleCount) {
         char recvBuffer[MAX_PACKET_SIZE];
-        sockaddr_in fromAddr;
-        int fromAddrLen = sizeof(fromAddr);
+        sockaddr_in fromAddr;//定义发送方地址结构体，用于接收数据包的来源信息
+        int fromAddrLen = sizeof(fromAddr);//发送方地址结构体大小
         
         int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
                                      (sockaddr*)&fromAddr, &fromAddrLen);
@@ -205,13 +204,14 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
         // ===== 模拟延迟 =====
         simulateDelay(recvSeq);
         
-        // 检查序列号是否在窗口范围内
+        // 检查序列号是否在接收窗口 [base, base+N) 内
         if (g_recvWindow.inWindow(recvSeq)) {
             int idx = g_recvWindow.getIndex(recvSeq);
             
             // 检查是否是重复包
             if (g_recvWindow.is_received[idx]) {
                 std::cout << "[Duplicate] Received duplicate packet seq=" << recvSeq << ", sending ACK" << std::endl;
+                g_recvWindow.total_duplicate_packets++;
             } else {
                 // 记录接收时间（第一个数据包开始计时）
                 if (!g_firstPacketReceived) {
@@ -220,8 +220,8 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
                 }
                 g_lastPacketTime = clock();  // 每次接收到新包都更新
                 
-                // 缓存数据包
-                memcpy(g_recvWindow.data_buf[idx], recvPacket.data, recvPacket.dataLen);
+                // 缓存数据包数据到接收窗口
+                memcpy(g_recvWindow.data_buf[idx], recvPacket.data, recvPacket.dataLen);//参数含义：目标地址，源地址，拷贝长度
                 g_recvWindow.data_len[idx] = recvPacket.dataLen;
                 g_recvWindow.is_received[idx] = 1;
                 
@@ -234,12 +234,14 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
                          << (g_recvWindow.base + FIXED_WINDOW_SIZE - 1) << "]";
                 
                 // 显示数据内容（如果是可打印字符）
+                /*
                 if (recvPacket.dataLen > 0 && recvPacket.dataLen < 100) {
                     char tempBuf[128];
                     memcpy(tempBuf, recvPacket.data, recvPacket.dataLen);
                     tempBuf[recvPacket.dataLen] = '\0';
                     std::cout << ", content: " << tempBuf;
                 }
+                */
                 std::cout << std::endl;
             }
             
@@ -255,7 +257,7 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
             
             // 检查是否需要发送SACK（窗口内有非连续的已接收包）
             bool needSACK = false;
-            for (uint32_t seq = g_recvWindow.base; seq < g_recvWindow.base + FIXED_WINDOW_SIZE; seq++) {
+            for (uint32_t seq = g_recvWindow.base + 1; seq < g_recvWindow.base + FIXED_WINDOW_SIZE; seq++) {
                 int checkIdx = g_recvWindow.getIndex(seq);
                 if (g_recvWindow.is_received[checkIdx] && seq > g_recvWindow.base) {
                     // 存在非连续的已接收包，需要SACK
@@ -271,6 +273,7 @@ int pipelineRecv(SOCKET serverSocket, sockaddr_in& clientAddr, int addrLen,
             // 收到旧包（序列号小于窗口base），说明之前的ACK可能丢失，重发ACK
             std::cout << "[Old Packet] seq=" << recvSeq << " < base=" << g_recvWindow.base 
                      << ", resending ACK" << std::endl;
+            g_recvWindow.total_duplicate_packets++;
             sendACK(serverSocket, clientAddr, addrLen, g_recvWindow.base, serverSeq, false);
         } else {
             // 序列号超出窗口范围，丢弃（流量控制）
@@ -389,10 +392,7 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
     ConnectionState state = ESTABLISHED;
     std::cout << "\n[Four-way Handshake] Received client close request..." << std::endl;
     
-    // 第一次挥手已经在数据接收循环中收到FIN包
-    // 这里直接从第二次挥手开始
-    
-    // Second handshake: Send ACK packet
+    // 第一次挥手已经在数据接收循环中收到FIN包，这里直接从第二次挥手开始
     state = CLOSE_WAIT;
     std::cout << "[State Transition] ESTABLISHED -> CLOSE_WAIT" << std::endl;
     
@@ -418,20 +418,19 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
     
     // 模拟处理剩余数据（这里暂停一小段时间）
     Sleep(500);
-    
-    // Third handshake: Send FIN packet
+
     state = LAST_ACK;
     std::cout << "[State Transition] CLOSE_WAIT -> LAST_ACK" << std::endl;
     
     Packet finPacket;
-    finPacket.header.seq = serverSeq;
-    finPacket.header.ack = clientSeq + 1;
-    finPacket.header.flag = FLAG_FIN;
+    finPacket.header.seq = serverSeq;//使用当前serverSeq作为FIN包的序列号
+    finPacket.header.ack = clientSeq + 1;//确认收到客户端的FIN包
+    finPacket.header.flag = FLAG_FIN;//设置FIN标志
     finPacket.dataLen = 0;
     finPacket.header.len = 0;  // 同步设置协议头中的数据长度字段
     finPacket.header.calculateChecksum(finPacket.data, 0);
     
-    finPacket.serialize(sendBuffer);
+    finPacket.serialize(sendBuffer);//序列化FIN包
     bytesSent = sendto(serverSocket, sendBuffer, finPacket.getTotalLen(), 0,
                       (sockaddr*)&clientAddr, sizeof(clientAddr));
     
@@ -446,10 +445,10 @@ bool handleClose(SOCKET serverSocket, sockaddr_in& clientAddr, uint32_t clientSe
     int timeout = TIMEOUT_MS;
     setsockopt(serverSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
     
-    char recvBuffer[MAX_PACKET_SIZE];
-    int clientAddrLen = sizeof(clientAddr);
+    char recvBuffer[MAX_PACKET_SIZE];//接收缓冲区
+    int clientAddrLen = sizeof(clientAddr);//发送方地址结构体大小
     int bytesReceived = recvfrom(serverSocket, recvBuffer, MAX_PACKET_SIZE, 0,
-                                 (sockaddr*)&clientAddr, &clientAddrLen);
+                                 (sockaddr*)&clientAddr, &clientAddrLen);//接收数据包
     
     if (bytesReceived == SOCKET_ERROR) {
         std::cerr << "[Timeout] Client final ACK not received" << std::endl;
@@ -657,20 +656,21 @@ int main() {
     }
     
     // 步骤2：使用流水线方式接收文件数据
-    g_receivedFileLen = 0;
+    // g_receivedFileLen = 0;
     int receivedLen = pipelineRecv(serverSocket, clientAddr, clientAddrLen, clientSeq, serverSeq, 
                                    finReceived, finSeq, g_receivedFileData, sizeof(g_receivedFileData));
     
     if (receivedLen > 0) {
-        g_receivedFileLen = receivedLen;
+        // g_receivedFileLen = receivedLen;
         std::cout << "\n[Summary] File received, " << receivedLen << " bytes" << std::endl;
+        std::cout << "[Summary] Total duplicate packets received: " << g_recvWindow.total_duplicate_packets << std::endl;
         
         // 保存文件到receive文件夹
         if (!g_currentFilename.empty()) {
             std::string savePath = std::string(RECEIVE_DIR) + "\\" + g_currentFilename;
             std::ofstream outFile(savePath, std::ios::binary | std::ios::trunc);
             if (outFile.is_open()) {
-                outFile.write(g_receivedFileData, g_receivedFileLen);
+                outFile.write(g_receivedFileData, receivedLen);
                 outFile.close();
                 std::cout << "[Save] File saved to: " << savePath << std::endl;
             } else {
